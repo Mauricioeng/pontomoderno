@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
+  
+  <!-- TAGS PARA O PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2563EB">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Bras%C3%A3o_de_Caieiras.svg/192px-Bras%C3%A3o_de_Caieiras.svg.png">
+
+  <title>UBS Laranjeiras - Ponto Inteligente</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* DESIGN SYSTEM - ESTILO REACT / MODERN UI */
+    :root { 
+      --bg: #F3F4F6; 
+      --card: #FFFFFF; 
+      --primary: #2563EB; 
+      --primary-hover: #1D4ED8;
+      --success: #10B981; 
+      --danger: #EF4444; 
+      --warning: #F59E0B; 
+      --text-main: #111827; 
+      --text-muted: #6B7280;
+      --border: #E5E7EB;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    * { box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background: var(--bg); margin: 0; padding-bottom: 30px; color: var(--text-main); }
+    
+    .flex { display: flex; align-items: center; } 
+    .justify-between { justify-content: space-between; } 
+    .gap-2 { gap: 8px; }
+
+    /* ========================================================
+       ANIMAÇÃO DE CARREGAMENTO (SPINNER MODERNO)
+       ======================================================== */
+    .loader-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
+    
+    .modern-spinner { width: 50px; height: 50px; border: 5px solid rgba(37, 99, 235, 0.15); border-left-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    .loading-text { margin-top: 24px; font-weight: 800; color: var(--primary); font-size: 14px; letter-spacing: 1.5px; animation: pulse 1.5s infinite; text-transform: uppercase; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    
+    /* LOGIN */
+    #login-screen { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .login-box { background: var(--card); padding: 40px 30px; border-radius: 24px; width: 100%; max-width: 380px; box-shadow: var(--shadow-lg); text-align: center; }
+    .login-box h2 { margin: 10px 0 24px; font-weight: 800; color: var(--text-main); font-size: 24px; }
+    
+    /* HEADER COM GLASSMORPHISM */
+    .header { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); padding: 30px 20px 20px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
+    .header h1 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+    .header p { margin: 4px 0 0; color: var(--text-muted); font-weight: 500; font-size: 13px; }
+    
+    /* STATUS BADGES */
+    .status-badge { font-size:11px; font-weight:700; padding:6px 12px; border-radius:999px; display:flex; align-items:center; gap:6px; box-shadow: var(--shadow-sm); transition: 0.3s; }
+    .status-badge svg { width: 14px; height: 14px; }
+
+    /* LAYOUT & CARDS */
+    .container { padding: 20px 16px; max-width: 800px; margin: 0 auto; }
+    .card { background: var(--card); border-radius: 20px; padding: 24px; margin-bottom: 16px; box-shadow: var(--shadow-md); border: 1px solid rgba(255,255,255,0.5); }
+    .card-title { font-size: 12px; font-weight: 800; color: var(--text-muted); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
+    
+    /* INPUTS */
+    label { font-size: 13px; font-weight: 600; margin-bottom: 8px; display: block; color: var(--text-main); }
+    input, select, textarea { width: 100%; background: #F9FAFB; border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; font-size: 15px; margin-bottom: 16px; outline: none; transition: all 0.2s; color: var(--text-main); }
+    input:focus, select:focus { border-color: var(--primary); background: #EFF6FF; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+    
+    /* BOTÕES */
+    .btn { width: 100%; background: var(--primary); color: white; font-size: 15px; font-weight: 700; border: none; border-radius: 14px; padding: 16px; cursor: pointer; transition: all 0.2s; display:flex; justify-content:center; align-items:center; gap:8px; box-shadow: 0 4px 6px rgba(37,99,235,0.2); }
+    .btn:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 6px 8px rgba(37,99,235,0.3); }
+    .btn:active { transform: translateY(1px); box-shadow: none; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-green { background: var(--success); box-shadow: 0 4px 6px rgba(16,185,129,0.2); }
+    .btn-green:hover { background: #059669; box-shadow: 0 6px 8px rgba(16,185,129,0.3); }
+
+    /* GRID AÇÕES */
+    .grid-acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .btn-acao { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px 10px; text-align: center; color: var(--text-main); font-weight: 600; font-size: 14px; cursor: pointer; display:flex; flex-direction:column; align-items:center; gap:10px; transition: all 0.2s; box-shadow: var(--shadow-sm); }
+    .btn-acao:hover { border-color: var(--primary); background: #F8FAFC; }
+    .btn-acao:active { transform: scale(0.97); }
+    .btn-acao svg { width: 26px; height: 26px; stroke: var(--primary); stroke-width: 2; fill: none; }
+
+    .view { display: none; } .view.active { display: block; animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* MODAL */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
+    .modal-box { background: var(--card); width: 100%; max-width: 320px; border-radius: 24px; text-align: center; box-shadow: var(--shadow-lg); animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); overflow: hidden; }
+    .modal-box h3 { margin: 20px 0 8px; font-size: 18px; color: var(--text-main); font-weight: 800; }
+    .modal-box p { margin: 0 20px 24px; font-size: 14px; color: var(--text-muted); line-height:1.5; }
+    .modal-btn { width: 100%; border: none; border-top: 1px solid var(--border); background: #F9FAFB; color: var(--primary); font-size: 15px; font-weight: 700; padding: 18px; cursor: pointer; transition: 0.2s; }
+    .modal-btn:active { background: #F3F4F6; }
+    @keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    /* ASSISTENTE */
+    .chat-bubble { animation: textFadeIn 0.5s ease-out forwards; }
+    @keyframes textFadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    .typing-cursor { border-right: 2px solid var(--primary); animation: blinkCursor 0.7s infinite; padding-right: 4px; }
+    @keyframes blinkCursor { from { border-right-color: var(--primary); } to { border-right-color: transparent; } }
+
+    /* MENU FAB */
+    .fab-container { position: fixed; bottom: 30px; right: 20px; z-index: 1000; display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 15px; }
+    .fab-main { width: 60px; height: 60px; background: rgba(255,255,255,0.1); border: none; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.3s; z-index: 1001; }
+    .fab-main svg { width: 46px; height: 46px; transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1); stroke: var(--primary); fill: rgba(255,255,255,0.9); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15)); }
+    .fab-container.open .fab-main svg { transform: rotate(45deg) scale(1.1); stroke: var(--danger); fill: white; }
+    
+    .fab-menu { display: flex; flex-direction: column; gap: 12px; opacity: 0; pointer-events: none; transform: translateY(20px) scale(0.9); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-origin: bottom right; }
+    .fab-container.open .fab-menu { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
+    
+    .fab-item { display: flex; align-items: center; justify-content: flex-end; gap: 12px; background: transparent; border: none; font-weight: 600; font-size: 14px; cursor: pointer; color: var(--text-main); padding: 0; }
+    .fab-item span { background: rgba(255, 255, 255, 0.95); padding: 10px 16px; border-radius: 12px; box-shadow: var(--shadow-md); backdrop-filter: blur(5px); }
+    .fab-item .icon-box { width: 46px; height: 46px; border-radius: 50%; background: white; box-shadow: var(--shadow-md); display: flex; justify-content: center; align-items: center; }
+    .fab-item svg { width: 20px; height: 20px; stroke: var(--primary); stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .fab-overlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.5); backdrop-filter: blur(3px); z-index: 999; }
+    .fab-container.open ~ .fab-overlay { display: block; animation: fadeIn 0.3s; }
+
+    /* ESPELHO A4 */
+    .folha-container { background: #fff; border-radius: 16px; box-shadow: var(--shadow-sm); padding: 15px; overflow-x: auto; margin-bottom: 20px; border: 1px solid var(--border); }
+    .tabela-espelho { width: 100%; min-width: 650px; border-collapse: collapse; font-size: 13px; text-align: center; }
+    .tabela-espelho th, .tabela-espelho td { border: 1px solid var(--border); padding: 10px 6px; vertical-align: middle; }
+    .tabela-espelho th { background: var(--primary); color: #fff; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+    .td-edit { background: #F9FAFB; font-family: 'Courier New', monospace; font-size: 15px; font-weight: 700; color: var(--primary); outline: none; border-radius: 6px; cursor: text; transition: 0.2s; }
+    .td-edit:focus { background: #EFF6FF; box-shadow: inset 0 0 0 2px var(--primary); color: var(--text-main); }
+    .td-total, .td-saldo { font-weight: 800; font-family: monospace; font-size: 14px; }
+    .td-total { background: #F3F4F6; color: var(--text-main); }
+    
+    .resumo-espelho { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 20px; }
+    .box-resumo { background: #F9FAFB; padding: 16px; border-radius: 14px; text-align: center; border: 1px solid var(--border); }
+    .box-resumo span { font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 6px; letter-spacing: 0.5px; }
+    .box-resumo b { font-size: 18px; color: var(--text-main); }
+
+    /* CSS - CALENDÁRIO VISUAL */
+    .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-weight: 800; font-size: 16px; color: var(--primary); }
+    .cal-btn { background: #F3F4F6; border: none; border-radius: 8px; width: 32px; height: 32px; font-weight: bold; cursor: pointer; color: var(--text-main); transition: 0.2s; }
+    .cal-btn:hover { background: #E5E7EB; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; }
+    .cal-day-header { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+    .cal-day { padding: 12px 0; font-size: 14px; font-weight: 600; border-radius: 10px; transition: 0.2s; cursor: default; border: 1px solid transparent; }
+    .cal-day.hoje { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(37,99,235,0.3); }
+    .cal-day.empty { visibility: hidden; }
+    .cal-day:not(.empty):not(.hoje):hover { background: #F9FAFB; border-color: var(--border); }
+
+    /* CSS - ACORDEÃO DIREITOS TRABALHISTAS */
+    .rights-accordion { margin-bottom: 12px; background: #F9FAFB; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    .rights-accordion summary { padding: 16px; font-weight: 700; cursor: pointer; list-style: none; display: flex; align-items: center; gap: 10px; color: var(--text-main); transition: 0.2s; font-size: 14px; }
+    .rights-accordion summary::-webkit-details-marker { display: none; }
+    .rights-accordion summary:hover { background: #EFF6FF; }
+    .rights-accordion[open] summary { border-bottom: 1px solid var(--border); background: #EFF6FF; color: var(--primary); }
+    .accordion-content { padding: 16px; font-size: 13.5px; color: var(--text-main); line-height: 1.6; background: #FFFFFF; }
+    .accordion-content ul { margin: 8px 0 0 20px; padding: 0; }
+    .accordion-content li { margin-bottom: 8px; color: var(--text-muted); }
+    .accordion-content li strong { color: var(--text-main); }
+    
+    @media print {
+      @page { size: A4 portrait; margin: 15mm; } body * { visibility: hidden; }
+      #view-tradicional, #view-tradicional * { visibility: visible; }
+      #view-tradicional { position: absolute; left: 0; top: 0; width: 100%; }
+      .folha-container { overflow: visible; box-shadow: none; border: none; padding: 0; min-width: 100%; }
+      .tabela-espelho { min-width: 100%; }
+      .tabela-espelho th { background: #f0f0f0 !important; color: #000 !important; -webkit-print-color-adjust: exact; }
+      .tabela-espelho th, .tabela-espelho td { border: 1px solid #000; padding: 4px; font-size: 11px; }
+      .resumo-espelho { border: 2px solid #000; background: transparent; padding: 10px; border-radius: 0; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- OVERLAY DE CARREGAMENTO (MODERNO) -->
+  <div id="global-loader" class="loader-overlay">
+    <div class="modern-spinner"></div>
+    <div id="loader-text" class="loading-text">INICIANDO SISTEMA...</div>
+  </div>
+
+  <!-- LOGIN -->
+  <div id="login-screen" style="display:none;">
+    <div class="login-box">
+      <svg width="100" height="90" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 10px; display: block;">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <circle cx="19" cy="11" r="5" fill="#fff" stroke="var(--warning)" stroke-width="1.5" />
+        <polyline points="19 8 19 11 21 12" stroke="var(--warning)" stroke-width="1.5">
+           <animateTransform attributeName="transform" type="rotate" from="0 19 11" to="360 19 11" dur="4s" repeatCount="indefinite" />
+        </polyline>
+      </svg>
+      <h2>Ponto Laranjeiras</h2>
+      <input type="text" id="lUser" placeholder="Usuário do Servidor" style="text-transform: lowercase;">
+      <input type="password" id="lPass" placeholder="Senha de Acesso">
+      <button class="btn" id="btnLogin" onclick="fazerLogin()">
+        Acessar Painel
+      </button>
+      <p id="loginError" style="color:var(--danger); font-size:13px; margin-top:15px; display:none; font-weight:600;"></p>
+    </div>
+  </div>
+
+  <!-- APP CONTENT -->
+  <div id="main-content" style="display:none;">
+    <div class="header flex justify-between">
+      <div>
+        <h1 id="userName">Nome</h1>
+        <p id="userCargo">Cargo</p>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+        <div id="statusMic" class="status-badge" style="background:#F3F4F6; color:var(--text-muted);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg> Mic Off
+        </div>
+        <div id="statusGps" class="status-badge" style="background:#FEE2E2; color:var(--danger);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"></circle></svg> Buscando GPS
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      
+      <!-- ABA 1: REGISTRO -->
+      <div id="view-dashboard" class="view active">
+        
+        <!-- PAINEL DE BOTÕES DE PONTO -->
+        <div class="card" style="border-top: 4px solid var(--primary);">
+          <div class="card-title">Registro Rápido</div>
+          <div class="grid-acoes">
+            <button class="btn-acao" onclick="pontoRapido('Entrada')">
+              <svg><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Entrada
+            </button>
+            <button class="btn-acao" onclick="pontoRapido('Almoço')">
+              <svg stroke="var(--warning)"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg> Saída Almoço
+            </button>
+            <button class="btn-acao" onclick="pontoRapido('Retorno')">
+              <svg stroke="var(--success)"><polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg> Retorno Almoço
+            </button>
+            <button class="btn-acao" onclick="pontoRapido('Saída Final')">
+              <svg stroke="var(--danger)"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Saída Final
+            </button>
+          </div>
+        </div>
+
+        <!-- ASSISTENTE INTELIGENTE -->
+        <div style="margin-bottom: 20px;">
+          <div class="chat-bubble" id="assistant-bubble" style="background: var(--card); padding: 24px; border-radius: 20px; box-shadow: var(--shadow-md); width: 100%; border: 1px solid var(--border);">
+             <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; border-bottom: 1px solid #F3F4F6; padding-bottom: 12px;">
+               <div style="background: linear-gradient(135deg, #2563EB, #60A5FA); width:28px; height:28px; border-radius:8px; display:flex; justify-content:center; align-items:center; box-shadow: 0 2px 4px rgba(37,99,235,0.3);">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+               </div>
+               <span id="msg-motivacional" style="font-size: 12px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px;">Inteligência do Ponto</span>
+             </div>
+             
+             <!-- Local da animação de digitação -->
+             <div id="msg-conversa" style="font-size: 15px; line-height: 1.6; color: var(--text-main);">Analisando seus dados...</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ABA 2: RELATÓRIOS E HISTÓRICO -->
+      <div id="view-relatorios" class="view">
+        <div class="card">
+          <div class="card-title">Resumo por Mês (Banco de Horas)</div>
+          <div id="listaResumoMeses">
+            <div style="text-align:center; padding:10px; color:var(--text-muted); font-size:14px;">Calculando dados...</div>
+          </div>
+        </div>
+        
+        <!-- NOVA SEÇÃO: DIREITOS DO TRABALHADOR -->
+        <div class="card" style="border-top: 4px solid var(--primary);">
+          <div class="card-title">Guia de Direitos: Estatutário vs CLT</div>
+          
+          <details class="rights-accordion">
+            <summary><span style="font-size:18px;">🏛️</span> Servidor Público (Estatutário)</summary>
+            <div class="accordion-content">
+               <p>Regidos pelo <strong>Estatuto dos Servidores Públicos</strong> do Município, Estado ou União. As regras são garantidas por lei específica.</p>
+               <ul>
+                 <li><strong>Estabilidade:</strong> Garantida após 3 anos de efetivo exercício (estágio probatório). Só pode ser demitido por justa causa ou processo administrativo.</li>
+                 <li><strong>Benefícios de Tempo:</strong> Anuênios, Quinquênios e Sexta-parte (adicionais no salário dependendo da legislação local).</li>
+                 <li><strong>Licença-Prêmio:</strong> Direito a meses de descanso remunerado (geralmente a cada 5 anos trabalhados).</li>
+                 <li><strong>Férias e 13º Salário:</strong> Garantidos, além do terço constitucional nas férias.</li>
+                 <li><strong>Previdência:</strong> Costumam estar vinculados a um Regime Próprio de Previdência Social (RPPS).</li>
+                 <li><strong>Atenção:</strong> Servidores estatutários <strong>não</strong> possuem FGTS depositado mensalmente, nem direito a Seguro-Desemprego.</li>
+               </ul>
+            </div>
+          </details>
+
+          <details class="rights-accordion">
+            <summary><span style="font-size:18px;">🏢</span> Trabalhador CLT (Celetista)</summary>
+            <div class="accordion-content">
+               <p>Regidos pela <strong>Consolidação das Leis do Trabalho (CLT)</strong>, aplicável à iniciativa privada e a alguns cargos e empresas públicas.</p>
+               <ul>
+                 <li><strong>FGTS:</strong> Fundo de Garantia depositado mensalmente pelo empregador (8% do salário).</li>
+                 <li><strong>Seguro-Desemprego:</strong> Direito a auxílio financeiro temporário em caso de demissão sem justa causa.</li>
+                 <li><strong>Rescisão:</strong> Em demissão sem justa causa, tem direito ao Aviso Prévio e Multa de 40% sobre o saldo do FGTS.</li>
+                 <li><strong>Férias e 13º Salário:</strong> Garantidos, além do terço constitucional de férias após 12 meses.</li>
+                 <li><strong>Horas Extras e Adicionais:</strong> Pagamento mínimo de 50% sobre a hora extra, além de adicional noturno, insalubridade e periculosidade (quando aplicável).</li>
+                 <li><strong>Previdência:</strong> Vinculados obrigatoriamente ao INSS (Regime Geral de Previdência Social).</li>
+               </ul>
+            </div>
+          </details>
+        </div>
+
+        <div class="card">
+          <div class="card-title flex gap-2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg> Exportar Documento (PDF)</div>
+          <div style="display:flex; gap:10px;">
+            <select id="pdfMes" style="flex:2">
+              <option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option>
+              <option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option>
+              <option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option>
+              <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+            </select>
+            <select id="pdfAno" style="flex:1"><option value="2026">2026</option></select>
+          </div>
+          <button class="btn btn-green" id="btnPdf" style="margin-top:10px;" onclick="gerarPDF()">Baixar Folha Original</button>
+        </div>
+      </div>
+
+      <!-- ABA 3: CALENDÁRIO -->
+      <div id="view-calendario" class="view">
+        <!-- NOVO CALENDÁRIO VISUAL EM PORTUGUÊS -->
+        <div class="card">
+          <div class="cal-header">
+             <button class="cal-btn" onclick="mudarMesCalendario(-1)">❮</button>
+             <div id="cal-mes-ano" style="text-transform: uppercase;">MÊS ANO</div>
+             <button class="cal-btn" onclick="mudarMesCalendario(1)">❯</button>
+          </div>
+          <div class="cal-grid">
+             <div class="cal-day-header">Dom</div>
+             <div class="cal-day-header">Seg</div>
+             <div class="cal-day-header">Ter</div>
+             <div class="cal-day-header">Qua</div>
+             <div class="cal-day-header">Qui</div>
+             <div class="cal-day-header">Sex</div>
+             <div class="cal-day-header">Sáb</div>
+          </div>
+          <div id="cal-dias-container" class="cal-grid" style="margin-top: 10px;"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Lista de Feriados Oficiais</div>
+          <div id="listaFeriados"></div>
+        </div>
+      </div>
+
+      <!-- ABA 4: ESPELHO TRADICIONAL (Sincronizado) -->
+      <div id="view-tradicional" class="view">
+        <div class="card no-print">
+          <div class="card-title">Espelho Físico (Sincronização Ativa)</div>
+          <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:15px;">
+            <label>Mês de Fechamento (Dia 11 a 10)</label>
+            <input type="month" id="tradMesData" value="2026-04" onchange="gerarFolhaTradicional()">
+            <div style="display:flex; gap:12px; align-items: center; background: #F0FDF4; padding: 12px; border-radius: 12px; border: 1px solid #BBF7D0;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              <span style="flex:1; font-size:13px; color:#166534; font-weight:700;">Salvo na tela</span>
+              
+              <!-- BOTÃO DE SINCRONIZAR COM A NUVEM -->
+              <button class="btn" style="width:auto; padding:10px 16px; font-size:14px; background: var(--primary);" onclick="sincronizarComNuvem()" id="btnSincronizar">☁️ Salvar Oficial</button>
+              
+              <button class="btn btn-green" style="width:auto; padding:10px 16px; font-size:14px;" onclick="window.print()">🖨️ Imprimir</button>
+            </div>
+            <p style="font-size:12px; color:var(--text-muted); margin-top:5px; text-align:center;">
+              Toque nas células numéricas para editar. O sistema calcula e salva a tela <b>automaticamente</b>.
+            </p>
+          </div>
+        </div>
+        <!-- ONDE A TABELA SERÁ INJETADA -->
+        <div id="folha-a4-render"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MENU FAB FLUTUANTE (ASSISTIVETOUCH) -->
+  <div class="fab-overlay" onclick="fecharFab()"></div>
+  <div class="fab-container" id="fabMenu" style="display:none;">
+    <div class="fab-menu">
+      <button class="fab-item" onclick="mudarAba('dashboard')">
+        <span>Início</span>
+        <div class="icon-box"><svg><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg></div>
+      </button>
+      <button class="fab-item" onclick="mudarAba('relatorios')">
+        <span>Relatórios e Direitos</span>
+        <div class="icon-box"><svg><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg></div>
+      </button>
+      <button class="fab-item" onclick="mudarAba('calendario')">
+        <span>Calendário Oficial</span>
+        <div class="icon-box"><svg><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></div>
+      </button>
+      <button class="fab-item" onclick="mudarAba('tradicional'); gerarFolhaTradicional();">
+        <span>Espelho Interativo</span>
+        <div class="icon-box"><svg><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M16 13H8"></path><path d="M16 17H8"></path><path d="M10 9H8"></path></svg></div>
+      </button>
+      <button class="fab-item" onclick="location.reload()">
+        <span style="color:var(--danger);">Encerrar Sessão</span>
+        <div class="icon-box"><svg stroke="var(--danger)"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></div>
+      </button>
+    </div>
+    
+    <!-- ÍCONE DO BOTÃO FLUTUANTE (Bolinha Animada) -->
+    <button class="fab-main" onclick="toggleFab()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="4" fill="currentColor"></circle>
+        <circle cx="12" cy="12" r="10" stroke-dasharray="8 4">
+          <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="8s" repeatCount="indefinite"/>
+        </circle>
+      </svg>
+    </button>
+  </div>
+
+  <!-- MODAL GERAL -->
+  <div id="customModal" class="modal-overlay">
+    <div class="modal-box">
+      <div id="modalIcon" style="font-size:48px; margin-top:24px;">✅</div>
+      <h3 id="modalTitle">Sucesso</h3><p id="modalMsg">Mensagem</p>
+      <button class="modal-btn" onclick="document.getElementById('customModal').style.display='none'">OK, Entendi</button>
+    </div>
+  </div>
+
+  <script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz2C7CMDee5LlUPCkYzTcEMjuWd-DzztpLIvQyi7h02nfI_2lmRr2gZcMCiDpzDelrP/exec";
+    let currentUser = null; 
+    let geo = { lat: 0, lon: 0, ok: false }; 
+    let historicoGlobal = []; 
+    let feriadosGlobal = [];
+    let climaAtual = null;
+    let notificacoesAtivas = false;
+    let voiceRecognition = null;
+
+    // INICIADOR DE TELA (Simula carregamento inicial rápido)
+    window.onload = () => {
+        setTimeout(() => {
+            document.getElementById('global-loader').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('global-loader').style.display = 'none';
+                document.getElementById('login-screen').style.display = 'flex';
+            }, 500);
+        }, 1200);
+    };
+
+    // FUNÇÕES DE EXIBIÇÃO DO LOADER
+    function mostrarLoader(texto) {
+        document.getElementById('loader-text').innerText = texto;
+        const loader = document.getElementById('global-loader');
+        loader.style.display = 'flex';
+        setTimeout(() => loader.style.opacity = '1', 10);
+    }
+    function ocultarLoader() {
+        const loader = document.getElementById('global-loader');
+        loader.style.opacity = '0';
+        setTimeout(() => loader.style.display = 'none', 500);
+    }
+
+    // Variáveis para o Calendário em Português
+    let calDataAtual = new Date();
+
+    const fabMenu = document.getElementById('fabMenu');
+    function toggleFab() { fabMenu.classList.toggle('open'); }
+    function fecharFab() { fabMenu.classList.remove('open'); }
+    function mudarAba(aba) {
+      document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
+      document.getElementById('view-' + aba).classList.add('active');
+      fecharFab();
+      
+      // Se abrir o calendário, renderiza visualmente
+      if (aba === 'calendario') { renderizarCalendarioVisual(); }
+    }
+
+    function abrirModal(titulo, msg, tipo='sucesso') {
+      document.getElementById('modalTitle').innerText = titulo; 
+      document.getElementById('modalMsg').innerHTML = msg;
+      document.getElementById('modalIcon').innerText = tipo === 'erro' ? '⚠️' : '✅'; 
+      document.getElementById('customModal').style.display = 'flex';
+    }
+
+    function fazerLogin() {
+      const login = document.getElementById('lUser').value.trim().toLowerCase(); 
+      const senha = document.getElementById('lPass').value.trim();
+      const err = document.getElementById('loginError');
+      if(!login || !senha) return;
+      
+      err.style.display = 'none';
+      mostrarLoader("AUTENTICANDO SERVIDOR...");
+      
+      fetch(WEB_APP_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ acao: "login", login: login, senha: senha })
+      }).then(r => r.json()).then(res => {
+        if(res.autorizado) {
+          currentUser = res; currentUser.loginID = login;
+          feriadosGlobal = res.feriados || [];
+          document.getElementById('login-screen').style.display = 'none'; 
+          document.getElementById('main-content').style.display = 'block';
+          document.getElementById('fabMenu').style.display = 'flex'; 
+          document.getElementById('userName').innerText = res.user.nome; 
+          document.getElementById('userCargo').innerText = res.user.cargo;
+          
+          carregarHistorico(); 
+          iniciarGps(); 
+          iniciarReconhecimentoVoz(); 
+          renderizarFeriados(feriadosGlobal);
+          solicitarPermissaoNotificacao();
+          ocultarLoader();
+        } else {
+          ocultarLoader();
+          err.innerText = "Credenciais incorretas!"; err.style.display = 'block';
+        }
+      }).catch(e => { 
+          ocultarLoader();
+          err.innerText = "Erro na rede. Verifique a internet."; err.style.display='block'; 
+      });
+    }
+
+    // =======================================================
+    // CALENDÁRIO VISUAL EM PORTUGUÊS
+    // =======================================================
+    function renderizarCalendarioVisual() {
+        const mesesPT = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+        const containerDias = document.getElementById('cal-dias-container');
+        const labelMes = document.getElementById('cal-mes-ano');
+        
+        containerDias.innerHTML = '';
+        
+        let mes = calDataAtual.getMonth();
+        let ano = calDataAtual.getFullYear();
+        labelMes.innerText = `${mesesPT[mes]} ${ano}`;
+        
+        // Pega o primeiro dia da semana do mês (0 = Dom, 1 = Seg...)
+        let primeiroDia = new Date(ano, mes, 1).getDay();
+        // Pega quantos dias tem o mês
+        let diasNoMes = new Date(ano, mes + 1, 0).getDate();
+        
+        let hoje = new Date();
+        let isMesAtual = (hoje.getMonth() === mes && hoje.getFullYear() === ano);
+        
+        // Espaços vazios antes do dia 1
+        for (let i = 0; i < primeiroDia; i++) {
+            let espaco = document.createElement('div');
+            espaco.className = 'cal-day empty';
+            containerDias.appendChild(espaco);
+        }
+        
+        // Renderiza os dias
+        for (let dia = 1; dia <= diasNoMes; dia++) {
+            let celula = document.createElement('div');
+            celula.className = 'cal-day';
+            celula.innerText = dia;
+            
+            // Destacar o dia de hoje
+            if (isMesAtual && dia === hoje.getDate()) {
+                celula.classList.add('hoje');
+            }
+            containerDias.appendChild(celula);
+        }
+    }
+
+    function mudarMesCalendario(direcao) {
+        calDataAtual.setMonth(calDataAtual.getMonth() + direcao);
+        renderizarCalendarioVisual();
+    }
+
+
+    let climaBuscado = false;
+    function iniciarGps() {
+      if (!navigator.geolocation) {
+         abrirModal("Erro Grave", "Seu navegador não suporta GPS.", "erro");
+         return;
+      }
+      navigator.geolocation.watchPosition(pos => {
+        geo.lat = pos.coords.latitude; geo.lon = pos.coords.longitude;
+        const R = 6371e3; const dLat = (currentUser.ubsGeo.lat - geo.lat) * Math.PI/180; const dLon = (currentUser.ubsGeo.lon - geo.lon) * Math.PI/180;
+        const a = Math.sin(dLat/2)**2 + Math.cos(geo.lat*Math.PI/180)*Math.cos(currentUser.ubsGeo.lat*Math.PI/180)*Math.sin(dLon/2)**2;
+        geo.ok = (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))) <= 250;
+        
+        const gs = document.getElementById('statusGps');
+        if(geo.ok) {
+            gs.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"></circle></svg> GPS Autorizado`;
+            gs.style.background = "#D1FAE5"; gs.style.color = "#047857";
+        } else {
+            gs.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"></circle></svg> GPS Fora de Alcance`;
+            gs.style.background = "#FEF3C7"; gs.style.color = "#B45309";
+        }
+
+        if (!climaBuscado && geo.lat !== 0) {
+            climaBuscado = true;
+            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${geo.lat}&longitude=${geo.lon}&current_weather=true`)
+              .then(r => r.json())
+              .then(data => { climaAtual = data.current_weather; atualizarPainelFrontEnd(); })
+              .catch(e => console.log('Erro ao buscar clima'));
+        }
+
+      }, err => {
+         geo.lat = 0; geo.lon = 0;
+         const gs = document.getElementById('statusGps');
+         gs.innerHTML = `⚠️ GPS Bloqueado`;
+         gs.style.background = "#FEE2E2"; gs.style.color = "#B91C1C";
+      }, {enableHighAccuracy: true});
+    }
+
+    function calcularEstatisticasTotais() {
+        let totalMinutos = 0;
+        let diasTrabalhados = 0;
+        
+        let porData = {};
+        historicoGlobal.forEach(h => {
+            if (!porData[h.data]) porData[h.data] = { e: null, ia: null, ta: null, s: null };
+            if (h.tipo === 'Entrada') porData[h.data].e = h.hora;
+            if (h.tipo === 'Almoço') porData[h.data].ia = h.hora;
+            if (h.tipo === 'Retorno') porData[h.data].ta = h.hora;
+            if (h.tipo === 'Saída Final') porData[h.data].s = h.hora;
+        });
+
+        for (let data in porData) {
+            let p = porData[data];
+            let minE = getMinutos(p.e); let minIa = getMinutos(p.ia);
+            let minTa = getMinutos(p.ta); let minS = getMinutos(p.s);
+
+            if (minE !== null && minS !== null) {
+                let tempoBruto = (minS < minE) ? (minS + 1440 - minE) : (minS - minE);
+                let tempoPausa = (minIa !== null && minTa !== null) ? (minTa < minIa ? minTa + 1440 - minIa : minTa - minIa) : 0;
+                let minTrab = tempoBruto - tempoPausa;
+                if (minTrab > 0) {
+                    totalMinutos += minTrab;
+                    diasTrabalhados++;
+                }
+            }
+        }
+
+        let horas = Math.floor(totalMinutos / 60);
+        let minRest = totalMinutos % 60;
+        let segundos = totalMinutos * 60; 
+        let meses = (diasTrabalhados / 22).toFixed(1); 
+        
+        let saldoMinutos = totalMinutos - (diasTrabalhados * 480); 
+        let saldoHoras = Math.floor(Math.abs(saldoMinutos) / 60);
+        let saldoRest = Math.abs(saldoMinutos) % 60;
+        let saldoStr = (saldoMinutos >= 0 ? "+" : "-") + `${saldoHoras}h ${saldoRest}m`;
+
+        return { totalMinutos, horas, minRest, segundos, diasTrabalhados, meses, saldoStr, saldoPositivo: saldoMinutos >= 0 };
+    }
+
+    function iniciarReconhecimentoVoz() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const sm = document.getElementById('statusMic');
+        
+        if (!SpeechRecognition) {
+            sm.innerHTML = `⚠️ Mic Indisponível`;
+            return;
+        }
+
+        voiceRecognition = new SpeechRecognition();
+        voiceRecognition.lang = 'pt-BR';
+        voiceRecognition.continuous = true; 
+        voiceRecognition.interimResults = false;
+
+        voiceRecognition.onstart = function() {
+            sm.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg> Ouvindo...`;
+            sm.style.color = "#047857"; sm.style.background = "#D1FAE5";
+        };
+
+        voiceRecognition.onresult = function(event) {
+            const last = event.results.length - 1;
+            const textoTranscrito = event.results[last][0].transcript.trim().toLowerCase();
+            processarComandoDeVoz(textoTranscrito);
+        };
+
+        voiceRecognition.onerror = function() {
+            sm.innerHTML = `⚠️ Mic Pausado`;
+            sm.style.color = "#B91C1C"; sm.style.background = "#FEE2E2";
+        };
+
+        voiceRecognition.onend = function() { try { voiceRecognition.start(); } catch(e){} };
+
+        try { voiceRecognition.start(); } catch(e) {}
+    }
+
+    function processarComandoDeVoz(texto) {
+        let respostaAssistente = "";
+        let isComandoInteligente = false;
+        
+        if (texto.includes("saldo") || texto.includes("total") || texto.includes("tudo") || texto.includes("horas trabalhei") || texto.includes("resumo")) {
+            let stats = calcularEstatisticasTotais();
+            let corSaldo = stats.saldoPositivo ? "var(--success)" : "var(--danger)";
+            
+            respostaAssistente = `🔍 <b>Análise Profunda do seu Histórico:</b><br><br>
+            Você já esteve presente em <b>${stats.diasTrabalhados} dias úteis</b> (o que dá quase ${stats.meses} meses de trabalho contínuo).<br><br>
+            Isso equivale a incríveis <b>${stats.horas} horas e ${stats.minRest} minutos</b> dedicados à UBS.<br>
+            <i>(Ou se preferir: exatos ${stats.totalMinutos} minutos... ou ${stats.segundos.toLocaleString('pt-BR')} segundos de dedicação pura!)</i> 🚀<br><br>
+            📊 O seu <b>Saldo Geral</b> comparado à carga horária oficial está em: <b style="color:${corSaldo}; font-size:16px;">${stats.saldoStr}</b>.`;
+            isComandoInteligente = true;
+        } 
+        else if(texto.includes("registrar entrada") || texto.includes("bater ponto") || texto.includes("cheguei")) {
+            pontoRapido('Entrada');
+            respostaAssistente = "Ouvi perfeitamente! Processando seu <b>Registro de Entrada</b> com base no seu GPS...";
+        } else if((texto.includes("almoço") || texto.includes("pausa")) && (texto.includes("saída") || texto.includes("saindo"))) {
+            pontoRapido('Almoço');
+            respostaAssistente = "Ouvi você dizer para <b>Sair para o Almoço</b>! Processando...";
+        } else if(texto.includes("retorno") || texto.includes("voltei")) {
+            pontoRapido('Retorno');
+            respostaAssistente = "Ouvi você dizer para <b>Retornar do Almoço</b>! Processando...";
+        } else if(texto.includes("saída final") || texto.includes("fui") || texto.includes("ir embora") || texto.includes("encerrar")) {
+            pontoRapido('Saída Final');
+            respostaAssistente = "Ouvi você dizer para registrar a <b>Saída Final</b>! Verificando...";
+        } else {
+            respostaAssistente = `Desculpe, eu escutei: <i>"${texto}"</i>.<br><br>Tente dizer comandos como: <b>"Registrar Entrada"</b>, <b>"Registrar Saída"</b> ou até mesmo pergunte <b>"Qual meu saldo total?"</b> e <b>"Quantas horas eu já trabalhei?"</b>.`;
+        }
+
+        document.getElementById('msg-motivacional').innerText = isComandoInteligente ? "Análise de Dados Concluída 🧠" : "Comando de Voz 🎤";
+        
+        let bubble = document.getElementById('assistant-bubble');
+        bubble.style.animation = 'none'; bubble.offsetHeight; 
+        bubble.style.animation = 'textFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+        
+        animarDigitacao(document.getElementById('msg-conversa'), respostaAssistente, 12);
+    }
+
+    function pontoRapido(tipo) {
+      if(geo.lat === 0 || geo.lon === 0) {
+        return abrirModal("Sinal GPS Não Encontrado", "O sistema de segurança exige a leitura do seu GPS para registrar o ponto.", "erro");
+      }
+
+      const hojeStr = new Date().toLocaleDateString('pt-BR');
+      if(tipo === 'Saída Final' && historicoGlobal.some(h => h.data === hojeStr && h.tipo === 'Saída Final')) { 
+        return abrirModal("Ação Recusada", "Sua saída final de hoje já foi registrada.", "erro"); 
+      }
+      
+      if(!confirm(`Confirma registrar ${tipo} agora?`)) return;
+    
+      const agora = new Date(); const horaStr = agora.getHours().toString().padStart(2,'0') + ":" + agora.getMinutes().toString().padStart(2,'0');
+      
+      mostrarLoader("GRAVANDO PONTO...");
+
+      dispararRequisicao({ usuario: currentUser.user.nome, dataManual: hojeStr, horaManual: horaStr, tipo: tipo, lat: geo.lat, lon: geo.lon, noLocal: geo.ok, obs: "" }, (res) => {
+          ocultarLoader();
+          if(res && res.sucesso === false) abrirModal("Aviso", res.msg, "erro"); 
+          else { abrirModal("Registro Realizado", `Seu ponto de <b>${tipo}</b> foi computado e salvo em nuvem!`, "sucesso"); carregarHistorico(); }
+      });
+    }
+
+    function dispararRequisicao(dados, callback) {
+      fetch(WEB_APP_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ acao: "registrar", dados: dados })
+      }).then(r => r.json()).then(res => { if(callback) callback(res); }).catch(err => { if(callback) callback(null); });
+    }
+
+    function carregarHistorico() {
+      fetch(WEB_APP_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ acao: "historico", nome: currentUser.user.nome })
+      }).then(r => r.json()).then(res => {
+        historicoGlobal = res; 
+        atualizarPainelFrontEnd();
+      });
+    }
+
+    function solicitarPermissaoNotificacao() {
+      if (!("Notification" in window)) return;
+      Notification.requestPermission().then(permission => {
+        if (permission === "granted") { notificacoesAtivas = true; iniciarMotorLembretes(); }
+      });
+    }
+
+    function iniciarMotorLembretes() {
+      setInterval(() => {
+        if(!notificacoesAtivas) return;
+        let agora = new Date();
+        let hrMin = agora.getHours().toString().padStart(2,'0') + ":" + agora.getMinutes().toString().padStart(2,'0');
+        let diaSemana = agora.getDay();
+        if(diaSemana === 0 || diaSemana === 6) return; 
+        
+        let msg = "";
+        if(hrMin === "07:55" || hrMin === "08:55") msg = "Bom dia! Não esqueça de bater o ponto de Entrada.";
+        if(hrMin === "12:00" || hrMin === "13:00") msg = "Hora do almoço! Lembre-se de registrar a saída e o retorno.";
+        if(hrMin === "16:55" || hrMin === "17:55") msg = "Fim do expediente. Por favor, registre sua Saída Final.";
+        
+        if(msg && !localStorage.getItem("aviso_" + hrMin + "_" + agora.getDate())) {
+           new Notification("Ponto Laranjeiras", { body: msg, icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Bras%C3%A3o_de_Caieiras.svg/192px-Bras%C3%A3o_de_Caieiras.svg.png" });
+           localStorage.setItem("aviso_" + hrMin + "_" + agora.getDate(), "true");
+        }
+      }, 60000);
+    }
+
+    function renderizarFeriados(feriados) { document.getElementById('listaFeriados').innerHTML = feriados.map(f => `<div style="padding:14px 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;"><div><div style="font-size:14px; font-weight:700; color:var(--text-main);">${f.nome}</div><div style="font-size:12px; color:var(--text-muted); margin-top:2px;">${f.data}</div></div><span style="font-size:11px; font-weight:800; background:#F3F4F6; padding:6px 10px; border-radius:8px; color:var(--text-muted);">${f.ref}</span></div>`).join(''); }
+    
+    function gerarPDF() {
+      mostrarLoader("GERANDO PDF...");
+      fetch(WEB_APP_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ acao: "pdf", login: currentUser.loginID, mes: document.getElementById('pdfMes').value, ano: 2026 })
+      }).then(r => r.json()).then(b64 => {
+        ocultarLoader();
+        if(!b64) return abrirModal("Aviso", "Não há registros computados para o mês selecionado.", "erro");
+        const a = document.createElement('a'); a.href = "data:application/pdf;base64," + b64; a.download = `Documento_Ponto_${document.getElementById('pdfMes').value}_2026.pdf`; a.click();
+      }).catch(err => {
+         ocultarLoader();
+         abrirModal("Erro", "Falha ao gerar o PDF.", "erro");
+      });
+    }
+
+    const n = new Date(); document.getElementById('pdfMes').value = n.getMonth() + 1;
+
+    function formataHorasMinutos(minutos) {
+        if(isNaN(minutos) || minutos === null) return "--:--";
+        let h = Math.floor(Math.abs(minutos) / 60).toString().padStart(2, '0');
+        let m = (Math.abs(minutos) % 60).toString().padStart(2, '0');
+        return `${h}:${m}`;
+    }
+
+    function getMinutos(str) { 
+        if(!str || str.trim() === '' || str.includes('-')) return null; 
+        str = str.toLowerCase().replace(/[h\.]/g, ':').replace(/\s/g, ''); 
+        let p = str.replace(/[^\d:]/g,'').split(':'); 
+        if(p.length === 2) {
+            let h = parseInt(p[0], 10) || 0; let m = parseInt(p[1], 10) || 0; return (h * 60) + m;
+        } else if (p.length === 1 && p[0].length > 0) {
+            let nums = p[0];
+            if(nums.length <= 2) return (parseInt(nums, 10) * 60); 
+            let h = parseInt(nums.substring(0, nums.length - 2), 10) || 0;
+            let m = parseInt(nums.substring(nums.length - 2), 10) || 0;
+            return (h * 60) + m;
+        }
+        return null; 
+    }
+
+    // =======================================================
+    // EFEITO DE DIGITAÇÃO (MÁQUINA DE ESCREVER)
+    // =======================================================
+    function animarDigitacao(elemento, htmlCompleto, velocidade = 15) {
+        elemento.innerHTML = "";
+        elemento.classList.add('typing-cursor');
+        let i = 0; let isTag = false; let text = "";
+
+        function digitaLetra() {
+            if (i < htmlCompleto.length) {
+                let char = htmlCompleto.charAt(i);
+                text += char;
+                if (char === '<') isTag = true;
+                if (char === '>') isTag = false;
+                
+                elemento.innerHTML = text;
+                i++;
+                if (isTag) digitaLetra(); else setTimeout(digitaLetra, velocidade);
+            } else {
+                elemento.classList.remove('typing-cursor');
+            }
+        }
+        digitaLetra();
+    }
+
+    // =======================================================
+    // ASSISTENTE INTELIGENTE PRINCIPAL
+    // =======================================================
+    function atualizarPainelFrontEnd() {
+        let hojeStr = new Date().toLocaleDateString('pt-BR');
+        let regHoje = historicoGlobal.filter(h => h.data === hojeStr);
+        
+        let ent = "--:--", alm = "--:--", ret = "--:--", sai = "--:--";
+        regHoje.forEach(r => {
+           if(r.tipo === 'Entrada') ent = r.hora;
+           if(r.tipo === 'Almoço') alm = r.hora;
+           if(r.tipo === 'Retorno') ret = r.hora;
+           if(r.tipo === 'Saída Final') sai = r.hora;
+        });
+
+        document.getElementById('msg-motivacional').innerText = "Resumo Diário da Inteligência";
+        
+        let minE = getMinutos(ent !== '--:--' ? ent : null);
+        let minIa = getMinutos(alm !== '--:--' ? alm : null);
+        let minTa = getMinutos(ret !== '--:--' ? ret : null);
+        let minS = getMinutos(sai !== '--:--' ? sai : null);
+        
+        let primeiroNome = currentUser ? currentUser.user.nome.split(' ')[0] : 'Servidor';
+        let textoConversa = `Olá, <b>${primeiroNome}</b>. `;
+        
+        // --- 1. LÓGICA DE HORÁRIOS ---
+        if (ent === '--:--') {
+            textoConversa += `Ainda não identifiquei o registro de sua entrada no dia de hoje. Não esqueça de fazê-lo quando iniciar suas atividades. `;
+        } else {
+            textoConversa += `O seu expediente teve início às <b>${ent}</b>. `;
+            
+            if (alm !== '--:--' && ret === '--:--') {
+                textoConversa += `Você pausou para o almoço às <b>${alm}</b>. Tenha uma ótima refeição! `;
+            } else if (alm !== '--:--' && ret !== '--:--') {
+                textoConversa += `Sua pausa pro almoço ocorreu das <b>${alm}</b> às <b>${ret}</b>. `;
+            }
+            
+            if (sai !== '--:--') {
+                textoConversa += `Seu expediente encerrou hoje às <b>${sai}</b>. Bom descanso!`;
+                if(minE !== null && minS !== null) {
+                    let tempoBruto = minS - minE;
+                    let tempoPausa = (minIa !== null && minTa !== null) ? (minTa - minIa) : 0;
+                    let minTrab = tempoBruto - tempoPausa;
+                    if (minTrab > 0) {
+                        textoConversa += `<br><br><span style="background:#F0FDF4; padding:6px 10px; border-radius:8px; color:#166534; font-weight:600; border: 1px solid #BBF7D0;">⏱️ Total Computado Hoje: ${formataHorasMinutos(minTrab)}</span>`;
+                    }
+                }
+            } else if (ent !== '--:--') {
+                 let agora = new Date();
+                 let minAgora = agora.getHours() * 60 + agora.getMinutes();
+                 let tempoBruto = minAgora - minE;
+                 let tempoPausa = (minIa !== null && minTa !== null) ? (minTa - minIa) : 
+                                  (minIa !== null && minTa === null) ? (minAgora - minIa) : 0; 
+                 
+                 let minTrab = tempoBruto - tempoPausa;
+                 if(minTrab > 0) {
+                     textoConversa += `<br><br><span style="background:#EFF6FF; padding:6px 10px; border-radius:8px; color:#1D4ED8; font-weight:600; display:inline-block; margin-top:5px; border: 1px solid #BFDBFE;">⏱️ Em andamento: ${formataHorasMinutos(minTrab)}</span>`;
+                 }
+            }
+        }
+
+        // --- 2. LÓGICA DE CLIMA E PERCURSO ---
+        if (climaAtual) {
+            let condicao = climaAtual.weathercode <= 3 ? "céu limpo" : (climaAtual.weathercode < 60 ? "nublado" : "chuvoso");
+            let emojiClima = climaAtual.weathercode <= 3 ? "☀️" : (climaAtual.weathercode < 60 ? "☁️" : "🌧️");
+            textoConversa += `<br><br>${emojiClima} <b>Condições Atuais:</b> ${Math.round(climaAtual.temperature)}°C com ${condicao} em Caieiras. `;
+            
+            if (ent !== '--:--' && sai === '--:--') {
+                 textoConversa += `Espero que o trajeto até a UBS tenha sido tranquilo hoje.`;
+            } else if (sai !== '--:--') {
+                 textoConversa += `Cuidado no trajeto de volta para casa!`;
+            }
+        }
+
+        // --- 3. LÓGICA DE FERIADOS ---
+        let dataAmanha = new Date();
+        dataAmanha.setDate(dataAmanha.getDate() + 1);
+        let strAmanha = ('0' + dataAmanha.getDate()).slice(-2) + '/' + ('0' + (dataAmanha.getMonth() + 1)).slice(-2) + '/' + dataAmanha.getFullYear();
+        
+        let feriadoAmanha = feriadosGlobal.find(f => f.data === strAmanha);
+        if (feriadoAmanha) {
+             textoConversa += `<br><br><span style="color:var(--primary); font-weight:bold;">🎉 Alerta de Recesso:</span> Amanhã consta como feriado de <b>${feriadoAmanha.nome}</b>. Aproveite!`;
+        }
+
+        // --- 4. DICAS DO RH / COMANDOS DE VOZ AVANÇADOS ---
+        const dicas = [
+            "<br><hr style='border:none; border-top:1px solid #E5E7EB; margin: 16px 0;'><span style='color:var(--text-muted); font-size:12px;'>📞 <b>Precisa de suporte?</b> O RH está à disposição pelo e-mail <b>rh@caieiras.sp.gov.br</b> e <b>daniela.manso@caieiras.sp.gov.br</b>.</span>",
+            "<br><hr style='border:none; border-top:1px solid #E5E7EB; margin: 16px 0;'><span style='color:var(--text-muted); font-size:12px;'>🧠 <b>Inteligência Ativa:</b> Você pode dizer em voz alta para mim coisas como: <i>'Qual o meu saldo total de horas?'</i> ou <i>'Resumo geral'</i> que eu calculo tudo para você instantaneamente.</span>"
+        ];
+        textoConversa += dicas[Math.floor(Math.random() * dicas.length)];
+
+        animarDigitacao(document.getElementById('msg-conversa'), textoConversa, 12);
+
+        document.getElementById('listaResumoMeses').innerHTML = `<div style="text-align:center; padding:15px; color:var(--text-muted);">Dados extraídos com sucesso do Espelho Interativo.</div>`;
+    }
+
+    // =======================================================
+    // TABELA E SALVAMENTO CORRIGIDO (ESPELHO)
+    // =======================================================
+    function salvarFolhaA4(silencioso = false) {
+        const valMes = document.getElementById('tradMesData').value; if(!valMes) return;
+        let edicoes = {}; 
+        let partesMes = valMes.split('-'); 
+        let ano = parseInt(partesMes[0]);
+        let mesInt = parseInt(partesMes[1]);
+
+        document.querySelectorAll('#folha-a4-render tr').forEach(tr => {
+            let td = tr.querySelector('.td-edit'); if(!td) return;
+            let dia = td.getAttribute('data-dia');
+            
+            // Lendo de forma segura pelas colunas
+            let e = tr.querySelector('[data-col="e"]')?.innerText.trim() || '';
+            let ia = tr.querySelector('[data-col="ia"]')?.innerText.trim() || '';
+            let ta = tr.querySelector('[data-col="ta"]')?.innerText.trim() || '';
+            let s = tr.querySelector('[data-col="s"]')?.innerText.trim() || '';
+            
+            // Salva na memória o que estiver lá (inclusive branco)
+            edicoes[dia] = {e, ia, ta, s};
+
+            let mesDoDia = (parseInt(dia) > 10) ? mesInt - 1 : mesInt;
+            let anoDoDia = ano; if(mesDoDia === 0) { mesDoDia = 12; anoDoDia--; }
+            let dataFormatada = `${dia}/${String(mesDoDia).padStart(2,'0')}/${anoDoDia}`;
+
+            historicoGlobal = historicoGlobal.filter(h => h.data !== dataFormatada);
+            if(e) historicoGlobal.push({ data: dataFormatada, hora: e, tipo: 'Entrada' });
+            if(ia) historicoGlobal.push({ data: dataFormatada, hora: ia, tipo: 'Almoço' });
+            if(ta) historicoGlobal.push({ data: dataFormatada, hora: ta, tipo: 'Retorno' });
+            if(s) historicoGlobal.push({ data: dataFormatada, hora: s, tipo: 'Saída Final' });
+        });
+
+        localStorage.setItem('folhaManual_' + currentUser.loginID + '_' + valMes, JSON.stringify(edicoes));
+        atualizarPainelFrontEnd(); 
+        
+        if(!silencioso) {
+            abrirModal("Sincronizado", "Edições da folha salvas na tela e painéis atualizados!", "sucesso");
+        }
+    }
+
+    function calcularLinhaA4(celulaEditada, requiresSave = true) {
+        let tr = celulaEditada.parentElement;
+        
+        let valE = tr.querySelector('[data-col="e"]')?.innerText.trim() || '';
+        let valIa = tr.querySelector('[data-col="ia"]')?.innerText.trim() || '';
+        let valTa = tr.querySelector('[data-col="ta"]')?.innerText.trim() || '';
+        let valS = tr.querySelector('[data-col="s"]')?.innerText.trim() || '';
+
+        let e = getMinutos(valE); 
+        let ia = getMinutos(valIa);
+        let ta = getMinutos(valTa); 
+        let s = getMinutos(valS);
+        
+        let tdTotal = tr.querySelector('.td-total'); 
+        let tdSaldo = tr.querySelector('.td-saldo');
+        let tdAss = tr.querySelector('.td-ass'); 
+        
+        if(!tdTotal) return;
+
+        if(e !== null && s !== null) {
+            let tempoBruto = (s < e) ? (s + 1440 - e) : (s - e);
+            let tempoPausa = (ia !== null && ta !== null) ? (ta < ia ? ta + 1440 - ia : ta - ia) : 0;
+            let minTrab = tempoBruto - tempoPausa;
+            if(minTrab < 0) minTrab = 0; 
+            
+            tdTotal.innerText = formataHorasMinutos(minTrab); tdTotal.setAttribute('data-minutos', minTrab);
+            let saldoDia = minTrab - 480;
+            tdSaldo.innerText = (saldoDia > 0 ? "+" : (saldoDia < 0 ? "-" : "")) + formataHorasMinutos(saldoDia);
+            tdSaldo.style.color = saldoDia > 0 ? 'var(--success)' : (saldoDia < 0 ? 'var(--danger)' : 'var(--text-main)');
+            tdSaldo.setAttribute('data-saldo', saldoDia);
+        } else { 
+            tdTotal.innerText = ""; tdTotal.removeAttribute('data-minutos'); 
+            tdSaldo.innerText = ""; tdSaldo.removeAttribute('data-saldo');
+        }
+
+        if (tdAss) {
+            if (valE !== '' && valS !== '') { 
+                tdAss.innerHTML = currentUser.user.assinatura ? `<img src="${currentUser.user.assinatura}" style="max-height: 20px; vertical-align: middle;">` : "";
+            } else {
+                tdAss.innerHTML = "";
+            }
+        }
+
+        calcularTotalFolhaA4();
+        // Apenas salva a planilha quando você realmente DIGITA algo
+        if(requiresSave) {
+            salvarFolhaA4(true);
+        }
+    }
+
+    function calcularTotalFolhaA4() {
+        let somaTrabalhado = 0; let somaSaldo = 0; let diasTrabalhados = 0;
+        document.querySelectorAll('#folha-a4-render .td-total').forEach(td => { 
+            let mins = td.getAttribute('data-minutos'); 
+            if(mins) { somaTrabalhado += parseInt(mins, 10); diasTrabalhados++; }
+        });
+        document.querySelectorAll('#folha-a4-render .td-saldo').forEach(td => { 
+            let sld = td.getAttribute('data-saldo'); 
+            if(sld) somaSaldo += parseInt(sld, 10); 
+        });
+        
+        let eGeral = document.getElementById('resumo-total'); let eDias = document.getElementById('resumo-dias'); let eSaldo = document.getElementById('resumo-saldo');
+        if(eGeral) eGeral.innerText = formataHorasMinutos(somaTrabalhado);
+        if(eDias) eDias.innerText = diasTrabalhados + " DIAS";
+        if(eSaldo) {
+            eSaldo.innerText = (somaSaldo > 0 ? "+" : (somaSaldo < 0 ? "-" : "")) + formataHorasMinutos(somaSaldo);
+            eSaldo.style.color = somaSaldo > 0 ? 'var(--success)' : (somaSaldo < 0 ? 'var(--danger)' : 'var(--text-main)');
+        }
+    }
+
+    function gerarFolhaTradicional() {
+      if(!currentUser) return;
+      const valMes = document.getElementById('tradMesData').value; if(!valMes) return;
+      
+      let [ano, mes] = valMes.split('-'); ano = parseInt(ano); mes = parseInt(mes);
+      let prevMes = mes - 1; let prevAno = ano; if(prevMes === 0) { prevMes = 12; prevAno--; }
+
+      const dataInicio = new Date(prevAno, prevMes - 1, 11); const dataFim = new Date(ano, mes - 1, 10);
+      let edicoesSalvas = JSON.parse(localStorage.getItem('folhaManual_' + currentUser.loginID + '_' + valMes)) || {};
+
+      let horarioOficial = "07h - 16h"; let nomeUsuario = currentUser.user.nome.toLowerCase(); let idUsuario = currentUser.loginID.toLowerCase();
+      if (nomeUsuario.includes("karina") || idUsuario.includes("karina") || nomeUsuario.includes("alane") || idUsuario.includes("alane")) { horarioOficial = "08h - 17h"; } 
+
+      let tagAssinatura = currentUser.user.assinatura ? `<img src="${currentUser.user.assinatura}" style="max-height: 20px; vertical-align: middle;">` : "";
+
+      let html = `
+        <div class="folha-container">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #555; padding-bottom:10px; margin-bottom:15px;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Bras%C3%A3o_de_Caieiras.svg/500px-Bras%C3%A3o_de_Caieiras.svg.png" style="width:60px; filter:grayscale(100%);">
+            <div style="text-align:right;">
+              <h2 style="margin:0; font-size:16px; font-weight:900; color:#000;">Secretaria de Saúde</h2>
+              <p style="margin:2px 0 0; font-size:9px; color:#333;">Av. Prof. Carvalho Pinto, 207 - Centro - Caieiras</p>
+            </div>
+          </div>
+          
+          <div style="font-size:12px; margin-bottom:15px; line-height:1.6; background:#f4f4f7; padding:10px; border-radius:8px; color:#000;">
+            <b>Servidor:</b> ${currentUser.user.nome.toUpperCase()} <br>
+            <b>Cargo:</b> ${currentUser.user.cargo.toUpperCase()} &nbsp;|&nbsp; <b>Horário Padrão:</b> ${horarioOficial}<br>
+            <b>Período:</b> 11/${String(prevMes).padStart(2,'0')}/${prevAno} a 10/${String(mes).padStart(2,'0')}/${ano}
+          </div>
+
+          <table class="tabela-espelho">
+            <tr>
+              <th>DIA</th><th>ENTRADA</th><th>SAÍDA ALM</th><th>RETORNO</th><th>SAÍDA F.</th><th>TRABALHO</th><th>SALDO (8H)</th><th>ASS</th>
+            </tr>
+      `;
+
+      let curDate = new Date(dataInicio);
+      while(curDate <= dataFim) {
+        let diaNum = ('0' + curDate.getDate()).slice(-2);
+        let mesNum = ('0' + (curDate.getMonth() + 1)).slice(-2);
+        let dataIso = curDate.toLocaleDateString('pt-BR');
+        let diaSemana = curDate.getDay(); 
+
+        let regsDia = historicoGlobal.filter(h => h.data === dataIso);
+        let e='', ia='', ta='', s='', folga=false;
+        
+        regsDia.forEach(r => {
+          if(r.tipo === 'Entrada') e = r.hora; if(r.tipo === 'Almoço') ia = r.hora;
+          if(r.tipo === 'Retorno') ta = r.hora; if(r.tipo === 'Saída Final') s = r.hora;
+          if(r.tipo === 'Folga') folga = true;
+        });
+
+        let finalE = edicoesSalvas[diaNum]?.e !== undefined ? edicoesSalvas[diaNum].e : e;
+        let finalIa = edicoesSalvas[diaNum]?.ia !== undefined ? edicoesSalvas[diaNum].ia : ia;
+        let finalTa = edicoesSalvas[diaNum]?.ta !== undefined ? edicoesSalvas[diaNum].ta : ta;
+        let finalS = edicoesSalvas[diaNum]?.s !== undefined ? edicoesSalvas[diaNum].s : s;
+        let finalAss = (finalE !== '' && finalS !== '') ? tagAssinatura : '';
+
+        if(folga) {
+            html += `<tr style="background:#e0e0e0;"><td style="font-size:11px; font-weight:bold;">${diaNum}/${mesNum}</td><td colspan="6" style="letter-spacing:3px; font-weight:bold; color:#555;">F O L G A / F E R I A D O</td><td class="td-ass"></td></tr>`;
+        } else if(diaSemana === 0 || diaSemana === 6) {
+          let nome = diaSemana === 0 ? "DOMINGO" : "SÁBADO";
+          html += `<tr style="background:#f9f9f9;"><td style="font-size:11px; font-weight:bold;">${diaNum}/${mesNum}</td><td colspan="6" style="text-align:left; padding-left:15px; letter-spacing:2px; font-weight:bold; color:#888;">${nome}</td><td class="td-ass"></td></tr>`;
+        } else {
+          html += `
+            <tr>
+              <td style="font-weight:bold; font-size:11px;">${diaNum}/${mesNum}</td>
+              <td class="td-edit" contenteditable="plaintext-only" inputmode="numeric" data-dia="${diaNum}" data-col="e" oninput="calcularLinhaA4(this, true)">${finalE}</td>
+              <td class="td-edit" contenteditable="plaintext-only" inputmode="numeric" data-dia="${diaNum}" data-col="ia" oninput="calcularLinhaA4(this, true)">${finalIa}</td>
+              <td class="td-edit" contenteditable="plaintext-only" inputmode="numeric" data-dia="${diaNum}" data-col="ta" oninput="calcularLinhaA4(this, true)">${finalTa}</td>
+              <td class="td-edit" contenteditable="plaintext-only" inputmode="numeric" data-dia="${diaNum}" data-col="s" oninput="calcularLinhaA4(this, true)">${finalS}</td>
+              <td class="td-total"></td>
+              <td class="td-saldo"></td>
+              <td class="td-ass" style="vertical-align:middle; text-align:center;">${finalAss}</td>
+            </tr>`;
+        }
+        curDate.setDate(curDate.getDate() + 1);
+      }
+
+      html += `</table>
+        <div class="resumo-espelho">
+          <div class="box-resumo"><span>TRABALHADO</span><b id="resumo-total">--:--</b></div>
+          <div class="box-resumo"><span>PRESENÇA</span><b id="resumo-dias">0 DIAS</b></div>
+          <div class="box-resumo"><span>SALDO MENSAL</span><b id="resumo-saldo">--:--</b></div>
+        </div>
+        <div style="margin-top: 40px; text-align: center;">
+          ${currentUser.user.assinatura ? `<img src="${currentUser.user.assinatura}" style="height: 55px; margin-bottom: -15px;">` : `<br><br><br>`}
+          <div style="border-top: 1px solid #000; width: 300px; margin: 0 auto; padding-top: 5px; font-size: 12px; color:#000;">
+            <b>${currentUser.user.nome.toUpperCase()}</b><br>
+            Assinatura do Servidor(a)
+          </div>
+        </div>
+      </div>`;
+      
+      document.getElementById('folha-a4-render').innerHTML = html;
+      
+      // O 'false' significa que vai apenas calcular visualmente sem rodar a rotina de salvar na inicialização
+      document.querySelectorAll('#folha-a4-render .td-edit[data-col="e"]').forEach(td => calcularLinhaA4(td, false));
+    }
+
+    function sincronizarComNuvem() {
+        const valMes = document.getElementById('tradMesData').value;
+        if(!valMes || !currentUser) return;
+        
+        let edicoesSalvas = JSON.parse(localStorage.getItem('folhaManual_' + currentUser.loginID + '_' + valMes)) || {};
+        
+        mostrarLoader("SINCRONIZANDO COM A NUVEM...");
+
+        fetch(WEB_APP_URL, { 
+            method: "POST", 
+            headers: { "Content-Type": "text/plain;charset=utf-8" }, 
+            body: JSON.stringify({ 
+                acao: "sincronizar", 
+                login: currentUser.loginID, 
+                mesAno: valMes, 
+                edicoes: edicoesSalvas 
+            })
+        }).then(r => r.json()).then(res => {
+            ocultarLoader();
+            if(res.sucesso) {
+                abrirModal("Nuvem Atualizada", "O banco de dados e o PDF agora estão 100% iguais à sua tela!", "sucesso");
+                carregarHistorico(); 
+            } else {
+                abrirModal("Erro", res.msg, "erro");
+            }
+        }).catch(err => {
+            ocultarLoader();
+            abrirModal("Erro de Conexão", "Não foi possível enviar os dados para a planilha.", "erro");
+        });
+    }
+  </script>
+</body>
+</html>
