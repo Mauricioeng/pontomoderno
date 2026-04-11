@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
   
   <!-- TAGS PARA O PWA -->
   <link rel="manifest" href="manifest.json">
@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Bras%C3%A3o_de_Caieiras.svg/192px-Bras%C3%A3o_de_Caieiras.svg.png">
 
-  <title>UBS Laranjeiras - Ponto Inteligente</title>
+  <title>UBS Laranjeiras - Ponto Inteligente</title>F
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     /* DESIGN SYSTEM - ESTILO REACT / MODERN UI */
@@ -127,7 +127,20 @@
     .tabela-espelho { width: 100%; min-width: 650px; border-collapse: collapse; font-size: 13px; text-align: center; }
     .tabela-espelho th, .tabela-espelho td { border: 1px solid var(--border); padding: 10px 6px; vertical-align: middle; }
     .tabela-espelho th { background: var(--primary); color: #fff; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
-    .td-edit { background: #F9FAFB; font-family: 'Courier New', monospace; font-size: 15px; font-weight: 700; color: var(--primary); outline: none; border-radius: 6px; cursor: text; transition: 0.2s; }
+    .td-edit { 
+      background: #F9FAFB; 
+      font-family: 'Courier New', monospace; 
+      font-size: 15px; 
+      font-weight: 700; 
+      color: var(--primary); 
+      outline: none; 
+      border-radius: 6px; 
+      cursor: text; 
+      transition: 0.2s;
+      /* ADICIONE ESTAS DUAS LINHAS: */
+      padding: 16px 10px !important; /* Aumenta o espaço interno do clique */
+      min-width: 55px; /* Garante que o quadrado não fique estreito demais */
+    }
     .td-edit:focus { background: #EFF6FF; box-shadow: inset 0 0 0 2px var(--primary); color: var(--text-main); }
     .td-total, .td-saldo { font-weight: 800; font-family: monospace; font-size: 14px; }
     .td-total { background: #F3F4F6; color: var(--text-main); }
@@ -222,6 +235,16 @@
       
       <!-- ABA 1: REGISTRO -->
       <div id="view-dashboard" class="view active">
+        
+        <!-- INÍCIO DO GUIA PARA INICIANTES (PODE APAGAR DEPOIS) -->
+        <div class="card" id="guia-inicio" style="background: #EFF6FF; border: 1px solid #BFDBFE; position: relative;">
+          <button onclick="document.getElementById('guia-inicio').style.display='none'" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:16px; cursor:pointer; color:#1D4ED8;">✖</button>
+          <div class="card-title" style="color: #1E3A8A;">👋 Guia Rápido: O que fazer aqui?</div>
+          <p style="font-size: 13.5px; color: #1E3A8A; line-height: 1.5; margin: 0;">
+            Esta é sua tela principal de trabalho. Todos os dias, use os botões abaixo (Entrada, Almoço, Retorno e Saída) para <b>registrar seus horários no momento exato em que eles acontecerem</b>. O sistema vai confirmar sua localização e gravar o ponto automaticamente para a administração.
+          </p>
+        </div>
+        <!-- FIM DO GUIA -->
         
         <!-- PAINEL DE BOTÕES DE PONTO -->
         <div class="card" style="border-top: 4px solid var(--primary);">
@@ -347,6 +370,18 @@
 
       <!-- ABA 4: ESPELHO TRADICIONAL (Sincronizado) -->
       <div id="view-tradicional" class="view">
+        <!-- INÍCIO DO GUIA PARA INICIANTES (PODE APAGAR DEPOIS) -->
+        <div class="card no-print" id="guia-folha" style="background: #FFFBEB; border: 1px solid #FDE68A; position: relative;">
+          <button onclick="document.getElementById('guia-folha').style.display='none'" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:16px; cursor:pointer; color:#B45309;">✖</button>
+          <div class="card-title" style="color: #92400E;">📄 Guia Rápido: Como funciona a Folha A4?</div>
+          <p style="font-size: 13.5px; color: #92400E; line-height: 1.5; margin: 0;">
+            Este é o seu "Espelho de Ponto" do mês. Os horários que você registra lá no "Início" aparecem aqui sozinhos.<br><br>
+            <b>Esqueceu de bater o ponto algum dia?</b> Não se preocupe! (Rotacione a Tela), toque no quadradinho vazio do dia correspondente e digite seu horário manualmente. Quando terminar suas correções do mês, clique no botão azul <b>"☁️ Salvar Oficial"</b> para enviar a folha para o Banco de Dados.
+          </p>
+        </div>
+        <!-- FIM DO GUIA -->
+        
+        
         <div class="card no-print">
           <div class="card-title">Espelho Físico (Sincronização Ativa)</div>
           <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:15px;">
@@ -863,8 +898,20 @@
         let minTa = getMinutos(ret !== '--:--' ? ret : null);
         let minS = getMinutos(sai !== '--:--' ? sai : null);
         
-        let primeiroNome = currentUser ? currentUser.user.nome.split(' ')[0] : 'Servidor';
-        let textoConversa = `Olá, <b>${primeiroNome}</b>. `;
+       let primeiroNome = currentUser ? currentUser.user.nome.split(' ')[0] : 'Servidor';
+        
+        // Lógica de saudação pelo horário
+        let horaAtual = new Date().getHours();
+        let saudacao = "Olá";
+        if (horaAtual >= 5 && horaAtual < 12) {
+            saudacao = "Bom dia";
+        } else if (horaAtual >= 12 && horaAtual < 18) {
+            saudacao = "Boa tarde";
+        } else {
+            saudacao = "Boa noite";
+        }
+
+        let textoConversa = `${saudacao}, <b>${primeiroNome}</b>. `;
         
         // --- 1. LÓGICA DE HORÁRIOS ---
         if (ent === '--:--') {
