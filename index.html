@@ -519,15 +519,24 @@
         let regsDia = historicoGlobal.filter(h => h.data === dataEscolhidaStr);
         let reqs = [];
 
+        // Captura a data e hora exata do dispositivo no momento do clique
+        let dataHoraDispositivo = new Date().toLocaleString('pt-BR'); 
+
         for (let tipo in valoresTiradosDaTela) {
             let horaInjetada = valoresTiradosDaTela[tipo];
             let horaQueJaTinha = regsDia.find(r => r.tipo === tipo)?.hora;
 
             if (horaInjetada && horaInjetada !== horaQueJaTinha) {
                 reqs.push({
-                    usuario: currentUser.user.nome, dataManual: dataEscolhidaStr, horaManual: horaInjetada, tipo: tipo,
-                    lat: geo.lat, lon: geo.lon, noLocal: geo.ok,
-                    obs: geo.ok ? "Registrado (No Local)" : `Registrado (Fora do Local - Lat:${geo.lat}, Lon:${geo.lon})`
+                    usuario: currentUser.user.nome, 
+                    dataManual: dataEscolhidaStr, 
+                    horaManual: horaInjetada, 
+                    tipo: tipo,
+                    lat: geo.lat, 
+                    lon: geo.lon, 
+                    noLocal: geo.ok,
+                    dataHoraDispositivo: dataHoraDispositivo, // Campo novo para o banco
+                    obs: geo.ok ? `Registrado via App em ${dataHoraDispositivo} (No Local)` : `Registrado via App em ${dataHoraDispositivo} (Fora do Local - Lat:${geo.lat}, Lon:${geo.lon})`
                 });
             }
         }
@@ -938,7 +947,9 @@
         if(!valMes || !currentUser) return;
         let edicoesSalvas = JSON.parse(localStorage.getItem('folhaManual_' + currentUser.loginID + '_' + valMes)) || {};
         
-        // Inclui as observações do banco de dados 
+        // Captura a data e hora exata do dispositivo no momento da sincronização
+        let dataHoraDispositivo = new Date().toLocaleString('pt-BR'); 
+
         let payload = {
             acao: "sincronizar",
             login: currentUser.loginID,
@@ -947,7 +958,8 @@
             lat: geo.lat,
             lon: geo.lon,
             noLocal: geo.ok,
-            obs: geo.ok ? "Sincronizado na Tela (No Local)" : `Sincronizado na Tela (Fora do Local - Lat:${geo.lat})`
+            dataHoraDispositivo: dataHoraDispositivo, // Campo novo para o banco
+            obs: geo.ok ? `Sincronizado na Tela em ${dataHoraDispositivo} (No Local)` : `Sincronizado na Tela em ${dataHoraDispositivo} (Fora do Local - Lat:${geo.lat})`
         };
 
         mostrarLoader("SINCRONIZANDO COM A NUVEM...");
