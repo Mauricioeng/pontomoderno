@@ -644,17 +644,17 @@
             promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebaseObs}`), payloadObs));
         }
 
-        try {
+      try {
             if(promises.length > 0) await Promise.all(promises);
             localStorage.removeItem('folhaManual_' + currentUser.loginID + '_' + valMes);
             
-            // Só avisa na tela se NÃO for o salvamento automático
+            // Só avisa/recarrega se NÃO for o salvamento automático
             if (!silencioso) {
                 ocultarLoader();
                 abrirModal("Nuvem Atualizada", "Banco de dados sincronizado em tempo real!", "sucesso");
+                carregarHistorico(); // <--- MOVIDO PARA CÁ!
             }
             
-            carregarHistorico();
         } catch (error) {
             if (!silencioso) {
                 ocultarLoader();
@@ -931,7 +931,12 @@
         } else { tdTotal.innerText = ""; tdTotal.removeAttribute('data-minutos'); tdSaldo.innerText = ""; tdSaldo.removeAttribute('data-saldo'); }
 
         if (tdAss) tdAss.innerHTML = (e !== null && s !== null && currentUser.user.assinatura) ? `<img src="${currentUser.user.assinatura}" style="max-height: 20px; vertical-align: middle;">` : "";
-        calcularTotalFolhaA4(); if(requiresSave) salvarFolhaA4(true); sincronizarComNuvem(true);
+calcularTotalFolhaA4(); 
+
+if (requiresSave) {
+    salvarFolhaA4(true); 
+    sincronizarComNuvem(true);
+}
     }
 
     function calcularTotalFolhaA4() {
