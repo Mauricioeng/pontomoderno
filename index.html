@@ -779,10 +779,13 @@
         return null;
     }
 
-    function gerarResumoTodosMeses() {
+   function gerarResumoTodosMeses() {
         if (!historicoGlobal || historicoGlobal.length === 0) return "";
         let diasMap = {};
         historicoGlobal.forEach(r => {
+            // CORREÇÃO: Ignora itens do Firebase que não sejam datas de ponto (como as Observações)
+            if (!r.data || !r.data.includes('/')) return;
+
             if(!diasMap[r.data]) diasMap[r.data] = {e:null, ia:null, ta:null, s:null};
             if(r.tipo==='Entrada') diasMap[r.data].e = r.hora;
             if(r.tipo==='Almoço') diasMap[r.data].ia = r.hora;
