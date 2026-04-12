@@ -582,8 +582,8 @@
         }
     }
 
-    // --- SINCRONIZAR A4 NO FIREBASE ---
-    async function sincronizarComNuvem() {
+  // --- SINCRONIZAR A4 NO FIREBASE (AGORA COM MODO SILENCIOSO) ---
+    async function sincronizarComNuvem(silencioso = false) {
         const valMes = document.getElementById('tradMesData').value;
         if(!valMes || !currentUser) return;
         
@@ -593,11 +593,13 @@
         let mesInt = parseInt(partesMes[1]);
         let dataHoraDispositivo = new Date().toLocaleString('pt-BR'); 
 
-        mostrarLoader("SINCRONIZANDO COM FIREBASE...");
+        // Só mostra o loader se NÃO for o salvamento automático
+        if (!silencioso) mostrarLoader("SINCRONIZANDO COM FIREBASE...");
+        
         let promises = [];
 
         for(let diaStr in edicoesSalvas) {
-            if(diaStr === '_obs') continue; // Pula a observação aqui para processar só os dias
+            if(diaStr === '_obs') continue;
             
             let objDoDia = edicoesSalvas[diaStr];
             let diaNum = parseInt(diaStr);
@@ -638,7 +640,6 @@
             }
         }
 
-        // NOVIDADE: Salva as observações do mês inteiro em um registro especial no Firebase
         if (edicoesSalvas['_obs'] !== undefined) {
             let chaveFirebaseObs = `OBS_MENSAL_${valMes}`;
             let payloadObs = {
@@ -651,15 +652,20 @@
 
         try {
             if(promises.length > 0) await Promise.all(promises);
-            
             localStorage.removeItem('folhaManual_' + currentUser.loginID + '_' + valMes);
             
-            ocultarLoader();
-            abrirModal("Nuvem Atualizada", "Banco de dados sincronizado em tempo real!", "sucesso");
+            // Só avisa na tela se NÃO for o salvamento automático
+            if (!silencioso) {
+                ocultarLoader();
+                abrirModal("Nuvem Atualizada", "Banco de dados sincronizado em tempo real!", "sucesso");
+            }
+            
             carregarHistorico();
         } catch (error) {
-            ocultarLoader();
-            abrirModal("Erro", "Falha de conexão com a Nuvem.", "erro");
+            if (!silencioso) {
+                ocultarLoader();
+                abrirModal("Erro", "Falha de conexão com a Nuvem.", "erro");
+            }
         }
     }
 
@@ -917,7 +923,7 @@
         } else { tdTotal.innerText = ""; tdTotal.removeAttribute('data-minutos'); tdSaldo.innerText = ""; tdSaldo.removeAttribute('data-saldo'); }
 
         if (tdAss) tdAss.innerHTML = (e !== null && s !== null && currentUser.user.assinatura) ? `<img src="${currentUser.user.assinatura}" style="max-height: 20px; vertical-align: middle;">` : "";
-        calcularTotalFolhaA4(); if(requiresSave) salvarFolhaA4(true);
+        calcularTotalFolhaA4(); if(requiresSave) salvarFolhaA4(true); sincronizarComNuvem(true);
     }
 
     function calcularTotalFolhaA4() {
@@ -1007,7 +1013,7 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
             Observações e Atestados
           </div>
-          <div class="obs-edit" contenteditable="plaintext-only" oninput="salvarFolhaA4(true)">${obsSalvas}</div>
+         <div class="obs-edit" contenteditable="plaintext-only" onblur="salvarFolhaA4(true); sincronizarComNuvem(true);">${obsSalvas}</div>
         </div>
 
         <div style="margin-top: 40px; text-align: center;">
