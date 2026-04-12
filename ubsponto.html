@@ -136,6 +136,13 @@
     .box-resumo span { font-size: 9px; font-weight: 800; color: #64748B; text-transform: uppercase; display: block; margin-bottom: 4px; letter-spacing: 0.5px; }
     .box-resumo b { font-size: 16px; color: #0F172A; }
 
+    /* CAMPO DE OBSERVAÇÕES E ATESTADOS */
+    .doc-obs { margin-top: 20px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px; text-align: left; }
+    .doc-obs-title { font-size: 10px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .obs-edit { min-height: 50px; font-size: 13px; color: #334155; outline: none; line-height: 1.5; white-space: pre-wrap; font-family: 'Inter', sans-serif; cursor: text; transition: 0.2s; }
+    .obs-edit:empty:before { content: "Clique para digitar anotações, atestados ou lembretes deste mês..."; color: #94A3B8; pointer-events: none; display: block; }
+    .obs-edit:focus { background: #fff; border-radius: 4px; box-shadow: inset 0 0 0 2px var(--primary); padding: 6px; margin: -6px; color: var(--text-main); }
+
     /* MEDIA QUERY PARA CELULARES */
     @media (max-width: 600px) {
        .folha-container { padding: 12px; border-radius: 12px; }
@@ -167,6 +174,9 @@
       .doc-info { border: 1px solid #000; background: transparent; }
       .resumo-espelho { gap: 0; display: flex; justify-content: space-between; border: 1px solid #000; padding: 10px; margin-top: 15px; }
       .box-resumo { border: none; padding: 0; width: 33%; }
+      .doc-obs { background: transparent; border: 1px solid #000; padding: 8px; border-radius: 0; margin-top: 15px; break-inside: avoid; }
+      .obs-edit:empty:before { display: none; }
+      .obs-edit { min-height: 30px; font-size: 11px; color: #000; padding: 0; margin: 0; }
       .no-print { display: none !important; }
     }
   </style>
@@ -198,13 +208,13 @@
 
   <div id="main-content" style="display:none;">
     
-    <!-- NOVO CABEÇALHO COMPACTO -->
+    <!-- CABEÇALHO COMPACTO -->
     <div class="header flex justify-between no-print">
       <div style="display:flex; align-items:center; gap:10px;">
         <div id="userAvatar" class="avatar-icon">US</div>
         <div style="display:flex; flex-direction:column;">
           <h1 id="userName">Nome</h1>
-          <span id="userCargo" style="display:none;">Cargo Oculto</span> <!-- Mantido apenas por segurança do JS -->
+          <span id="userCargo" style="display:none;">Cargo Oculto</span> 
         </div>
       </div>
       <div style="display:flex; gap:6px; align-items:center;">
@@ -219,7 +229,7 @@
 
     <div class="container">
       
-      <!-- ASSISTENTE INTELIGENTE COM ACORDEÃO (SEM VOZ) -->
+      <!-- ASSISTENTE INTELIGENTE -->
       <details class="no-print chat-bubble" open style="background: var(--card); border-radius: 20px; box-shadow: var(--shadow-md); border: 1px solid var(--border); padding: 0;">
         <summary style="padding: 20px 24px; border-bottom: 1px solid #F3F4F6;">
            <div style="display:flex; align-items:center; gap:10px; flex:1;">
@@ -509,15 +519,24 @@
         let regsDia = historicoGlobal.filter(h => h.data === dataEscolhidaStr);
         let reqs = [];
 
+        // Captura a data e hora exata do dispositivo no momento do clique
+        let dataHoraDispositivo = new Date().toLocaleString('pt-BR'); 
+
         for (let tipo in valoresTiradosDaTela) {
             let horaInjetada = valoresTiradosDaTela[tipo];
             let horaQueJaTinha = regsDia.find(r => r.tipo === tipo)?.hora;
 
             if (horaInjetada && horaInjetada !== horaQueJaTinha) {
                 reqs.push({
-                    usuario: currentUser.user.nome, dataManual: dataEscolhidaStr, horaManual: horaInjetada, tipo: tipo,
-                    lat: geo.lat, lon: geo.lon, noLocal: geo.ok,
-                    obs: geo.ok ? "Registrado (No Local)" : `Registrado (Fora do Local - Lat:${geo.lat}, Lon:${geo.lon})`
+                    usuario: currentUser.user.nome, 
+                    dataManual: dataEscolhidaStr, 
+                    horaManual: horaInjetada, 
+                    tipo: tipo,
+                    lat: geo.lat, 
+                    lon: geo.lon, 
+                    noLocal: geo.ok,
+                    dataHoraDispositivo: dataHoraDispositivo, // Campo novo para o banco
+                    obs: geo.ok ? `Registrado via App em ${dataHoraDispositivo} (No Local)` : `Registrado via App em ${dataHoraDispositivo} (Fora do Local - Lat:${geo.lat}, Lon:${geo.lon})`
                 });
             }
         }
@@ -617,7 +636,6 @@
         digitaLetra();
     }
 
-    // IDENTIFICAÇÃO DO PRÓXIMO FERIADO
     function getProximoFeriado() {
         if (!feriadosGlobal || feriadosGlobal.length === 0) return null;
         
@@ -787,6 +805,10 @@
             if(s) historicoGlobal.push({ data: dataFormatada, hora: s, tipo: 'Saída Final' });
         });
 
+        // Salvar as anotações/atestados
+        let obsBox = document.querySelector('.obs-edit');
+        if(obsBox) { edicoes["_obs"] = obsBox.innerText; }
+
         localStorage.setItem('folhaManual_' + currentUser.loginID + '_' + valMes, JSON.stringify(edicoes));
         atualizarPainelFrontEnd(); 
         if(!silencioso) abrirModal("Sincronizado", "Edições salvas na tela localmente!", "sucesso");
@@ -891,7 +913,30 @@
         curDate.setDate(curDate.getDate() + 1);
       }
 
-      html += `</table><div class="resumo-espelho"><div class="box-resumo"><span>TRABALHADO</span><b id="resumo-total">--:--</b></div><div class="box-resumo"><span>PRESENÇA</span><b id="resumo-dias">0 DIAS</b></div><div class="box-resumo"><span>SALDO MENSAL</span><b id="resumo-saldo">--:--</b></div></div><div style="margin-top: 40px; text-align: center;">${currentUser.user.assinatura ? `<img src="${currentUser.user.assinatura}" style="height: 55px; margin-bottom: -15px;">` : `<br><br><br>`}<div style="border-top: 1px solid #000; width: 300px; margin: 0 auto; padding-top: 5px; font-size: 12px; color:#000;"><b>${currentUser.user.nome.toUpperCase()}</b><br>Assinatura do Servidor(a)</div></div></div>`;
+      let obsSalvas = edicoesSalvas["_obs"] || "";
+
+      html += `</table>
+        <div class="resumo-espelho">
+          <div class="box-resumo"><span>TRABALHADO</span><b id="resumo-total">--:--</b></div>
+          <div class="box-resumo"><span>PRESENÇA</span><b id="resumo-dias">0 DIAS</b></div>
+          <div class="box-resumo"><span>SALDO MENSAL</span><b id="resumo-saldo">--:--</b></div>
+        </div>
+        
+        <div class="doc-obs">
+          <div class="doc-obs-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            Observações e Atestados
+          </div>
+          <div class="obs-edit" contenteditable="plaintext-only" oninput="salvarFolhaA4(true)">${obsSalvas}</div>
+        </div>
+
+        <div style="margin-top: 40px; text-align: center;">
+          ${currentUser.user.assinatura ? `<img src="${currentUser.user.assinatura}" style="height: 55px; margin-bottom: -15px;">` : `<br><br><br>`}
+          <div style="border-top: 1px solid #000; width: 300px; margin: 0 auto; padding-top: 5px; font-size: 12px; color:#000;">
+            <b>${currentUser.user.nome.toUpperCase()}</b><br>Assinatura do Servidor(a)
+          </div>
+        </div>
+      </div>`;
       
       document.getElementById('folha-a4-render').innerHTML = html;
       document.querySelectorAll('#folha-a4-render .td-edit[data-col="e"]').forEach(td => calcularLinhaA4(td, false));
@@ -901,14 +946,39 @@
         const valMes = document.getElementById('tradMesData').value;
         if(!valMes || !currentUser) return;
         let edicoesSalvas = JSON.parse(localStorage.getItem('folhaManual_' + currentUser.loginID + '_' + valMes)) || {};
+        
+        // Captura a data e hora exata do dispositivo no momento da sincronização
+        let dataHoraDispositivo = new Date().toLocaleString('pt-BR'); 
+
+        let payload = {
+            acao: "sincronizar",
+            login: currentUser.loginID,
+            mesAno: valMes,
+            edicoes: edicoesSalvas,
+            lat: geo.lat,
+            lon: geo.lon,
+            noLocal: geo.ok,
+            dataHoraDispositivo: dataHoraDispositivo, // Campo novo para o banco
+            obs: geo.ok ? `Sincronizado na Tela em ${dataHoraDispositivo} (No Local)` : `Sincronizado na Tela em ${dataHoraDispositivo} (Fora do Local - Lat:${geo.lat})`
+        };
+
         mostrarLoader("SINCRONIZANDO COM A NUVEM...");
-        fetch(WEB_APP_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ acao: "sincronizar", login: currentUser.loginID, mesAno: valMes, edicoes: edicoesSalvas })
+        fetch(WEB_APP_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload)
         }).then(r => r.json()).then(res => {
             ocultarLoader();
             if(res.sucesso) { abrirModal("Nuvem Atualizada", "Salvo no banco de dados!", "sucesso"); carregarHistorico(); } 
             else abrirModal("Erro", res.msg, "erro");
         }).catch(err => { ocultarLoader(); abrirModal("Erro", "Falha na conexão.", "erro"); });
     }
+    
+    // Fecha a "Inteligência do Ponto" ao rolar a página para baixo
+  window.addEventListener('scroll', () => {
+    const chatBubble = document.querySelector('.chat-bubble');
+    // Se a página for rolada mais de 50 pixels e o painel estiver aberto, ele remove o atributo 'open'
+    if (window.scrollY > 50 && chatBubble && chatBubble.hasAttribute('open')) {
+      chatBubble.removeAttribute('open');
+    }
+  });
   </script>
 </body>
 </html>
