@@ -505,6 +505,7 @@
       });
     }
 
+    // --- SALVAR LOTE FIREBASE (Manual) ---
     async function salvarHorariosLote() {
         const dataIso = document.getElementById('inpDataRegistro').value;
         if (!dataIso) return abrirModal("Aviso", "Selecione uma data válida.", "erro");
@@ -530,6 +531,7 @@
 
             if (horaInjetada && horaInjetada !== horaQueJaTinha) {
                 let chaveFirebase = `${dia}_${mes}_${ano}_${tipo}`; 
+                
                 let obj = {
                     usuario: currentUser.user.nome, 
                     data: dataEscolhidaStr, 
@@ -539,6 +541,7 @@
                     dataHoraDispositivo: dataHoraDispositivo,
                     obs: geo.ok ? `Registrado via App em ${dataHoraDispositivo} (Local)` : `Registrado via App em ${dataHoraDispositivo} (Fora)`
                 };
+
                 promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebase}`), obj));
                 novosRegistros++;
             }
@@ -551,6 +554,11 @@
 
         try {
             await Promise.all(promises);
+            
+            // CORREÇÃO: Limpa o rascunho fantasma do celular para forçar a leitura do Firebase
+            const valMes = document.getElementById('tradMesData').value;
+            localStorage.removeItem('folhaManual_' + currentUser.loginID + '_' + valMes);
+            
             ocultarLoader();
             abrirModal("Sucesso", `Horários registrados instantaneamente!`, "sucesso");
             carregarHistorico();
@@ -560,6 +568,7 @@
         }
     }
 
+    // --- SINCRONIZAR A4 NO FIREBASE ---
     async function sincronizarComNuvem() {
         const valMes = document.getElementById('tradMesData').value;
         if(!valMes || !currentUser) return;
@@ -592,24 +601,37 @@
             ];
 
             for(let item of mapeamento) {
-                if(objDoDia[item.key]) {
+                let valorEditado = objDoDia[item.key];
+                
+                if (valorEditado !== undefined) {
                     let chaveFirebase = `${dd}_${mm}_${anoDoDia}_${item.tipo}`;
-                    let payload = {
-                        usuario: currentUser.user.nome,
-                        data: dataFormatada,
-                        hora: objDoDia[item.key],
-                        tipo: item.tipo,
-                        noLocal: geo.ok,
-                        dataHoraDispositivo: dataHoraDispositivo,
-                        obs: geo.ok ? `Sincronizado Espelho em ${dataHoraDispositivo} (Local)` : `Sincronizado Espelho em ${dataHoraDispositivo} (Fora)`
-                    };
-                    promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebase}`), payload));
+                    
+                    // CORREÇÃO: Se a pessoa apagou a célula, mandamos um comando "null" para deletar do Firebase.
+                    if (valorEditado === "") {
+                        promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebase}`), null));
+                    } else {
+                        // Salva o valor novo normalmente
+                        let payload = {
+                            usuario: currentUser.user.nome,
+                            data: dataFormatada,
+                            hora: valorEditado,
+                            tipo: item.tipo,
+                            noLocal: geo.ok,
+                            dataHoraDispositivo: dataHoraDispositivo,
+                            obs: geo.ok ? `Sincronizado Espelho em ${dataHoraDispositivo} (Local)` : `Sincronizado Espelho em ${dataHoraDispositivo} (Fora)`
+                        };
+                        promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebase}`), payload));
+                    }
                 }
             }
         }
 
         try {
             if(promises.length > 0) await Promise.all(promises);
+            
+            // CORREÇÃO: Limpa o rascunho do celular para a folha ser redesenhada 100% via Firebase!
+            localStorage.removeItem('folhaManual_' + currentUser.loginID + '_' + valMes);
+            
             ocultarLoader();
             abrirModal("Nuvem Atualizada", "Banco de dados sincronizado em tempo real!", "sucesso");
             carregarHistorico();
