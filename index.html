@@ -392,17 +392,31 @@
     // LINK DO SEU GOOGLE APPS SCRIPT (Que agora é só o Guarda-costas do Login)
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz2C7CMDee5LlUPCkYzTcEMjuWd-DzztpLIvQyi7h02nfI_2lmRr2gZcMCiDpzDelrP/exec"; 
 
-    const FERIADOS_2026 = [
-      { data: "01/01/2026", nome: "Confraternização Universal" }, { data: "16/02/2026", nome: "A compensar" },
-      { data: "17/02/2026", nome: "Carnaval" }, { data: "18/02/2026", nome: "Cinzas (até 13h)" },
-      { data: "03/04/2026", nome: "Sexta Feira Santa" }, { data: "05/04/2026", nome: "Páscoa" },
-      { data: "21/04/2026", nome: "Tiradentes" }, { data: "01/05/2026", nome: "Dia do Trabalho" },
-      { data: "04/06/2026", nome: "Corpus Christi" }, { data: "13/06/2026", nome: "Padroeiro da Cidade" },
-      { data: "09/07/2026", nome: "Data Magna SP" }, { data: "07/09/2026", nome: "Independência" },
-      { data: "12/10/2026", nome: "N. Sra. Aparecida" }, { data: "28/10/2026", nome: "Dia do Servidor" },
-      { data: "02/11/2026", nome: "Finados" }, { data: "15/11/2026", nome: "Proclamação da República" },
-      { data: "20/11/2026", nome: "Consciência Negra" }, { data: "14/12/2026", nome: "Aniversário da Cidade" },
-      { data: "25/12/2026", nome: "Natal" }
+  const FERIADOS_2026 = [
+      { data: "01/01/2026", nome: "Confraternização Universal" }, 
+      { data: "16/02/2026", nome: "A compensar (Carnaval)" },
+      { data: "17/02/2026", nome: "Carnaval" }, 
+      { data: "18/02/2026", nome: "Cinzas (até 13h)" },
+      { data: "03/04/2026", nome: "Sexta Feira Santa" }, 
+      { data: "05/04/2026", nome: "Páscoa" },
+      { data: "20/04/2026", nome: "A compensar (Tiradentes)" },
+      { data: "21/04/2026", nome: "Tiradentes" }, 
+      { data: "01/05/2026", nome: "Dia do Trabalho" },
+      { data: "04/06/2026", nome: "Corpus Christi" }, 
+      { data: "05/06/2026", nome: "A compensar (Corpus Christi)" },
+      { data: "13/06/2026", nome: "Padroeiro da Cidade" },
+      { data: "09/07/2026", nome: "Data Magna SP" }, 
+      { data: "10/07/2026", nome: "A compensar (Data Magna)" },
+      { data: "07/09/2026", nome: "Independência do Brasil" },
+      { data: "12/10/2026", nome: "N. Sra. Aparecida" }, 
+      { data: "28/10/2026", nome: "Dia do Servidor" },
+      { data: "02/11/2026", nome: "Finados" }, 
+      { data: "15/11/2026", nome: "Proclamação da República" },
+      { data: "20/11/2026", nome: "Consciência Negra" }, 
+      { data: "14/12/2026", nome: "Aniversário da Cidade" },
+      { data: "24/12/2026", nome: "Véspera de Natal" },
+      { data: "25/12/2026", nome: "Natal" },
+      { data: "31/12/2026", nome: "Véspera de Ano Novo" }
     ];
 
     let currentUser = null; 
