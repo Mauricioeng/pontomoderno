@@ -297,10 +297,7 @@
     </div>
   </div>
 
-  <!-- Botão Flutuante Discreto (Rodapé) -->
-  <button id="btnSalvarNuvem" class="btn-flutuante no-print" style="display:none;" onclick="sincronizarComNuvem()" title="Salvar na Nuvem">
-     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-  </button>
+ 
 
   <div id="modalPonto" class="modal-overlay">
     <div class="modal-box" style="padding: 24px;">
@@ -484,7 +481,7 @@
           let iniciais = nomes[0].charAt(0).toUpperCase() + (nomes.length > 1 ? nomes[nomes.length-1].charAt(0).toUpperCase() : '');
           document.getElementById('userAvatar').innerText = iniciais;
           document.getElementById('userName').innerText = nomes[0] + (nomes.length > 1 ? ' ' + nomes[nomes.length-1] : ''); 
-          document.getElementById('btnSalvarNuvem').style.display = 'flex'; 
+         
           
           carregarHistorico(); 
           iniciarGps(); 
