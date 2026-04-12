@@ -208,7 +208,6 @@
 
   <div id="main-content" style="display:none;">
     
-    <!-- CABEÇALHO COMPACTO -->
     <div class="header flex justify-between no-print">
       <div style="display:flex; align-items:center; gap:10px;">
         <div id="userAvatar" class="avatar-icon">US</div>
@@ -229,7 +228,6 @@
 
     <div class="container">
       
-      <!-- ASSISTENTE INTELIGENTE -->
       <details class="no-print chat-bubble" open style="background: var(--card); border-radius: 20px; box-shadow: var(--shadow-md); border: 1px solid var(--border); padding: 0;">
         <summary style="padding: 20px 24px; border-bottom: 1px solid #F3F4F6;">
            <div style="display:flex; align-items:center; gap:10px; flex:1;">
@@ -245,7 +243,6 @@
         <div style="padding: 0 24px 24px 24px;">
            <div id="msg-conversa" style="font-size: 15px; line-height: 1.6; color: var(--text-main); margin-top: 15px;">Analisando seus dados...</div>
 
-           <!-- Caixa de Consentimento de Notificações -->
            <div id="box-notificacao" class="notification-box" style="display:none;">
               <div style="display:flex; align-items:center; gap:8px;">
                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
@@ -666,7 +663,7 @@
         }
     }
 
-    // --- FUNÇÕES GEOLOCALIZAÇÃO E UTILITÁRIOS (MANTIDAS EXATAMENTE IGUAIS) ---
+    // --- FUNÇÕES GEOLOCALIZAÇÃO E UTILITÁRIOS ---
     let climaBuscado = false;
     function iniciarGps() {
       if (!navigator.geolocation) { return; }
@@ -685,10 +682,23 @@
             gs.style.background = "#FEF3C7"; gs.style.color = "#B45309";
         }
 
+        // --- CORREÇÃO DO LOOP INFINITO AQUI ---
+        // Agora, se o clima for encontrado, atualizamos o DOM DIRETAMENTE
+        // sem chamar a função 'atualizarPainelFrontEnd()' inteira novamente.
         if (!climaBuscado && geo.lat !== 0) {
             climaBuscado = true;
             fetch(`https://api.open-meteo.com/v1/forecast?latitude=${geo.lat}&longitude=${geo.lon}&current_weather=true`)
-              .then(r => r.json()).then(data => { climaAtual = data.current_weather; atualizarPainelFrontEnd(); }).catch(e => e);
+              .then(r => r.json()).then(data => { 
+                climaAtual = data.current_weather; 
+                
+                // Injeta o clima diretamente na conversa sem resetar tudo
+                let conversaBox = document.getElementById('msg-conversa');
+                if(conversaBox && !conversaBox.innerHTML.includes("Clima Local")) {
+                    let climaHtml = `<br><br>${climaAtual.weathercode <= 3 ? "☀️" : "☁️"} <b>Clima Local:</b> ${Math.round(climaAtual.temperature)}°C.`;
+                    conversaBox.innerHTML += climaHtml;
+                }
+
+              }).catch(e => console.error("Erro ao buscar clima", e));
         }
       }, err => {
          geo.lat = 0; geo.lon = 0;
@@ -820,7 +830,7 @@
         chaves.forEach(k => {
             let sld = mesesMap[k].saldo;
             let corSld = sld > 0 ? "var(--success)" : (sld < 0 ? "var(--danger)" : "var(--text-main)");
-            htmlStr += `<span style="display:inline-block; margin-top:4px;">• <b>Ref ${k}:</b> Trab <b>${formataHorasMinutos(mesesMap[k].trab)}</b> | Saldo <b style="color:${corSld}">${sld > 0 ? "+" : (sld < 0 ? "-" : "")}${formataHorasMinutos(sld)}</b></span><br>`;
+            htmlStr += `<span style="display:inline-block; margin-top:4px;">• <b>Ref ${k}:</b> Trab <b>${formataHorasMinutos(mesesMap[k].trab)}</b> | Saldo <b style="color:${corSld}">${sld > 0 ? "+" : (sld < 0 ? "")}${formataHorasMinutos(sld)}</b></span><br>`;
         });
         return htmlStr;
     }
@@ -860,6 +870,7 @@
             if (sai !== '--:--') textoConversa += `Ponto encerrado às <b>${sai}</b>.`;
         }
 
+        // O clima agora NÃO atualiza o painel inteiro
         if (climaAtual) textoConversa += `<br><br>${climaAtual.weathercode <= 3 ? "☀️" : "☁️"} <b>Clima Local:</b> ${Math.round(climaAtual.temperature)}°C.`;
         
         let proxFeriado = getProximoFeriado();
