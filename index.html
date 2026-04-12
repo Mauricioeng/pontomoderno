@@ -371,12 +371,44 @@
     </div>
   </div>
 
-  <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz2C7CMDee5LlUPCkYzTcEMjuWd-DzztpLIvQyi7h02nfI_2lmRr2gZcMCiDpzDelrP/exec";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+    // CHAVES DO FIREBASE (Só para o Banco de Dados agora)
+    const firebaseConfig = {
+      apiKey: "AIzaSyDrcb9hOtTIcDwb96WxfQ_Nu8hCoOH6-o8",
+      authDomain: "corepontomoderno.firebaseapp.com",
+      databaseURL: "https://corepontomoderno-default-rtdb.firebaseio.com",
+      projectId: "corepontomoderno",
+      storageBucket: "corepontomoderno.firebasestorage.app",
+      messagingSenderId: "482776711687",
+      appId: "1:482776711687:web:3c205abb8c5988d6ce20a2"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+
+    // LINK DO SEU GOOGLE APPS SCRIPT (Que agora é só o Guarda-costas do Login)
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz2C7CMDee5LlUPCkYzTcEMjuWd-DzztpLIvQyi7h02nfI_2lmRr2gZcMCiDpzDelrP/exec"; 
+
+    const FERIADOS_2026 = [
+      { data: "01/01/2026", nome: "Confraternização Universal" }, { data: "16/02/2026", nome: "A compensar" },
+      { data: "17/02/2026", nome: "Carnaval" }, { data: "18/02/2026", nome: "Cinzas (até 13h)" },
+      { data: "03/04/2026", nome: "Sexta Feira Santa" }, { data: "05/04/2026", nome: "Páscoa" },
+      { data: "21/04/2026", nome: "Tiradentes" }, { data: "01/05/2026", nome: "Dia do Trabalho" },
+      { data: "04/06/2026", nome: "Corpus Christi" }, { data: "13/06/2026", nome: "Padroeiro da Cidade" },
+      { data: "09/07/2026", nome: "Data Magna SP" }, { data: "07/09/2026", nome: "Independência" },
+      { data: "12/10/2026", nome: "N. Sra. Aparecida" }, { data: "28/10/2026", nome: "Dia do Servidor" },
+      { data: "02/11/2026", nome: "Finados" }, { data: "15/11/2026", nome: "Proclamação da República" },
+      { data: "20/11/2026", nome: "Consciência Negra" }, { data: "14/12/2026", nome: "Aniversário da Cidade" },
+      { data: "25/12/2026", nome: "Natal" }
+    ];
+
     let currentUser = null; 
     let geo = { lat: 0, lon: 0, ok: false }; 
     let historicoGlobal = []; 
-    let feriadosGlobal = [];
+    let feriadosGlobal = FERIADOS_2026;
     let climaAtual = null;
 
     window.onload = () => {
@@ -395,6 +427,7 @@
         loader.style.display = 'flex';
         setTimeout(() => loader.style.opacity = '1', 10);
     }
+
     function ocultarLoader() {
         const loader = document.getElementById('global-loader');
         loader.style.opacity = '0';
@@ -408,6 +441,7 @@
       document.getElementById('customModal').style.display = 'flex';
     }
 
+    // --- LOGIN HÍBRIDO: HTML -> GOOGLE APPS SCRIPT ---
     function fazerLogin() {
       const login = document.getElementById('lUser').value.trim().toLowerCase(); 
       const senha = document.getElementById('lPass').value.trim();
@@ -417,19 +451,25 @@
       err.style.display = 'none';
       mostrarLoader("AUTENTICANDO...");
       
-      fetch(WEB_APP_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ acao: "login", login: login, senha: senha })
-      }).then(r => r.json()).then(res => {
+      // Envia a senha para o Google Apps Script verificar em segredo
+      fetch(WEB_APP_URL, { 
+        method: "POST", 
+        headers: { "Content-Type": "text/plain;charset=utf-8" }, 
+        body: JSON.stringify({ acao: "login", login: login, senha: senha })
+      })
+      .then(r => r.json())
+      .then(res => {
         if(res.autorizado) {
-          currentUser = res; currentUser.loginID = login;
-          feriadosGlobal = res.feriados || [];
+          currentUser = res; 
+          currentUser.loginID = login;
+          
           document.getElementById('login-screen').style.display = 'none'; 
           document.getElementById('main-content').style.display = 'block';
           
-          let nomes = res.user.nome.split(' ');
+          let nomes = currentUser.user.nome.split(' ');
           let iniciais = nomes[0].charAt(0).toUpperCase() + (nomes.length > 1 ? nomes[nomes.length-1].charAt(0).toUpperCase() : '');
           document.getElementById('userAvatar').innerText = iniciais;
           document.getElementById('userName').innerText = nomes[0] + (nomes.length > 1 ? ' ' + nomes[nomes.length-1] : ''); 
-          
           document.getElementById('btnSalvarNuvem').style.display = 'flex'; 
           
           carregarHistorico(); 
@@ -437,7 +477,8 @@
           ocultarLoader();
         } else {
           ocultarLoader();
-          err.innerText = "Credenciais incorretas!"; err.style.display = 'block';
+          err.innerText = "Credenciais incorretas!"; 
+          err.style.display = 'block';
         }
       }).catch(e => { 
           ocultarLoader();
@@ -445,11 +486,143 @@
       });
     }
 
+    // --- DAQUI PRA BAIXO, TUDO É FIREBASE ---
+    function carregarHistorico() {
+      mostrarLoader("CARREGANDO HISTÓRICO...");
+      get(ref(database, `historico/${currentUser.loginID}`)).then((snapshot) => {
+          historicoGlobal = [];
+          if (snapshot.exists()) {
+              snapshot.forEach((childSnapshot) => {
+                  historicoGlobal.push(childSnapshot.val());
+              });
+          }
+          atualizarPainelFrontEnd();
+          gerarFolhaTradicional(); 
+          ocultarLoader();
+      }).catch((error) => {
+          ocultarLoader();
+          abrirModal("Erro", "Não foi possível carregar os dados.", "erro");
+      });
+    }
+
+    async function salvarHorariosLote() {
+        const dataIso = document.getElementById('inpDataRegistro').value;
+        if (!dataIso) return abrirModal("Aviso", "Selecione uma data válida.", "erro");
+        
+        const [ano, mes, dia] = dataIso.split('-');
+        const dataEscolhidaStr = `${dia}/${mes}/${ano}`;
+        let dataHoraDispositivo = new Date().toLocaleString('pt-BR'); 
+        
+        let valoresTiradosDaTela = {
+            'Entrada': document.getElementById('inpEntrada').value,
+            'Almoço': document.getElementById('inpAlmoco').value,
+            'Retorno': document.getElementById('inpRetorno').value,
+            'Saída Final': document.getElementById('inpSaida').value
+        };
+
+        let regsDia = historicoGlobal.filter(h => h.data === dataEscolhidaStr);
+        let promises = [];
+        let novosRegistros = 0;
+
+        for (let tipo in valoresTiradosDaTela) {
+            let horaInjetada = valoresTiradosDaTela[tipo];
+            let horaQueJaTinha = regsDia.find(r => r.tipo === tipo)?.hora;
+
+            if (horaInjetada && horaInjetada !== horaQueJaTinha) {
+                let chaveFirebase = `${dia}_${mes}_${ano}_${tipo}`; 
+                let obj = {
+                    usuario: currentUser.user.nome, 
+                    data: dataEscolhidaStr, 
+                    hora: horaInjetada, 
+                    tipo: tipo,
+                    noLocal: geo.ok,
+                    dataHoraDispositivo: dataHoraDispositivo,
+                    obs: geo.ok ? `Registrado via App em ${dataHoraDispositivo} (Local)` : `Registrado via App em ${dataHoraDispositivo} (Fora)`
+                };
+                promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebase}`), obj));
+                novosRegistros++;
+            }
+        }
+
+        if (novosRegistros === 0) { fecharModalPonto(); return abrirModal("Aviso", "Nenhum horário novo foi digitado.", "erro"); }
+
+        fecharModalPonto();
+        mostrarLoader("GRAVANDO NO FIREBASE...");
+
+        try {
+            await Promise.all(promises);
+            ocultarLoader();
+            abrirModal("Sucesso", `Horários registrados instantaneamente!`, "sucesso");
+            carregarHistorico();
+        } catch (error) {
+            ocultarLoader();
+            abrirModal("Erro", "Ocorreu um problema ao salvar.", "erro");
+        }
+    }
+
+    async function sincronizarComNuvem() {
+        const valMes = document.getElementById('tradMesData').value;
+        if(!valMes || !currentUser) return;
+        
+        let edicoesSalvas = JSON.parse(localStorage.getItem('folhaManual_' + currentUser.loginID + '_' + valMes)) || {};
+        let partesMes = valMes.split('-'); 
+        let ano = parseInt(partesMes[0]); 
+        let mesInt = parseInt(partesMes[1]);
+        let dataHoraDispositivo = new Date().toLocaleString('pt-BR'); 
+
+        mostrarLoader("SINCRONIZANDO COM FIREBASE...");
+        let promises = [];
+
+        for(let diaStr in edicoesSalvas) {
+            if(diaStr === '_obs') continue;
+            
+            let objDoDia = edicoesSalvas[diaStr];
+            let diaNum = parseInt(diaStr);
+            let mesDoDia = (diaNum > 10) ? mesInt - 1 : mesInt; 
+            let anoDoDia = ano; 
+            if(mesDoDia === 0) { mesDoDia = 12; anoDoDia--; }
+            
+            let dd = String(diaNum).padStart(2,'0');
+            let mm = String(mesDoDia).padStart(2,'0');
+            let dataFormatada = `${dd}/${mm}/${anoDoDia}`;
+
+            let mapeamento = [
+                { key: 'e', tipo: "Entrada" }, { key: 'ia', tipo: "Almoço" },
+                { key: 'ta', tipo: "Retorno" }, { key: 's', tipo: "Saída Final" }
+            ];
+
+            for(let item of mapeamento) {
+                if(objDoDia[item.key]) {
+                    let chaveFirebase = `${dd}_${mm}_${anoDoDia}_${item.tipo}`;
+                    let payload = {
+                        usuario: currentUser.user.nome,
+                        data: dataFormatada,
+                        hora: objDoDia[item.key],
+                        tipo: item.tipo,
+                        noLocal: geo.ok,
+                        dataHoraDispositivo: dataHoraDispositivo,
+                        obs: geo.ok ? `Sincronizado Espelho em ${dataHoraDispositivo} (Local)` : `Sincronizado Espelho em ${dataHoraDispositivo} (Fora)`
+                    };
+                    promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebase}`), payload));
+                }
+            }
+        }
+
+        try {
+            if(promises.length > 0) await Promise.all(promises);
+            ocultarLoader();
+            abrirModal("Nuvem Atualizada", "Banco de dados sincronizado em tempo real!", "sucesso");
+            carregarHistorico();
+        } catch (error) {
+            ocultarLoader();
+            abrirModal("Erro", "Falha de conexão com a Nuvem.", "erro");
+        }
+    }
+
+    // --- FUNÇÕES GEOLOCALIZAÇÃO E UTILITÁRIOS (MANTIDAS EXATAMENTE IGUAIS) ---
     let climaBuscado = false;
     function iniciarGps() {
-      if (!navigator.geolocation) {
-         abrirModal("Erro", "Seu navegador não suporta GPS.", "erro"); return;
-      }
+      if (!navigator.geolocation) { return; }
       navigator.geolocation.watchPosition(pos => {
         geo.lat = pos.coords.latitude; geo.lon = pos.coords.longitude;
         const R = 6371e3; const dLat = (currentUser.ubsGeo.lat - geo.lat) * Math.PI/180; const dLon = (currentUser.ubsGeo.lon - geo.lon) * Math.PI/180;
@@ -468,8 +641,7 @@
         if (!climaBuscado && geo.lat !== 0) {
             climaBuscado = true;
             fetch(`https://api.open-meteo.com/v1/forecast?latitude=${geo.lat}&longitude=${geo.lon}&current_weather=true`)
-              .then(r => r.json()).then(data => { climaAtual = data.current_weather; atualizarPainelFrontEnd(); })
-              .catch(e => console.log('Erro clima'));
+              .then(r => r.json()).then(data => { climaAtual = data.current_weather; atualizarPainelFrontEnd(); }).catch(e => e);
         }
       }, err => {
          geo.lat = 0; geo.lon = 0;
@@ -479,14 +651,10 @@
 
     function abrirModalPonto() {
       const hoje = new Date();
-      const ano = hoje.getFullYear();
-      const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-      const dia = String(hoje.getDate()).padStart(2, '0');
-      document.getElementById('inpDataRegistro').value = `${ano}-${mes}-${dia}`;
+      document.getElementById('inpDataRegistro').value = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
       carregarHorariosDoDiaSelecionado();
       document.getElementById('modalPonto').style.display = 'flex';
     }
-
     function fecharModalPonto() { document.getElementById('modalPonto').style.display = 'none'; }
 
     function carregarHorariosDoDiaSelecionado() {
@@ -502,85 +670,6 @@
       document.getElementById('inpSaida').value   = regsDia.find(r => r.tipo === 'Saída Final')?.hora || '';
     }
 
-    async function salvarHorariosLote() {
-        const dataIso = document.getElementById('inpDataRegistro').value;
-        if (!dataIso) return abrirModal("Aviso", "Selecione uma data válida.", "erro");
-        
-        const [ano, mes, dia] = dataIso.split('-');
-        const dataEscolhidaStr = `${dia}/${mes}/${ano}`;
-        
-        let valoresTiradosDaTela = {
-            'Entrada': document.getElementById('inpEntrada').value,
-            'Almoço': document.getElementById('inpAlmoco').value,
-            'Retorno': document.getElementById('inpRetorno').value,
-            'Saída Final': document.getElementById('inpSaida').value
-        };
-
-        let regsDia = historicoGlobal.filter(h => h.data === dataEscolhidaStr);
-        let reqs = [];
-
-        // Captura a data e hora exata do dispositivo no momento do clique
-        let dataHoraDispositivo = new Date().toLocaleString('pt-BR'); 
-
-        for (let tipo in valoresTiradosDaTela) {
-            let horaInjetada = valoresTiradosDaTela[tipo];
-            let horaQueJaTinha = regsDia.find(r => r.tipo === tipo)?.hora;
-
-            if (horaInjetada && horaInjetada !== horaQueJaTinha) {
-                reqs.push({
-                    usuario: currentUser.user.nome, 
-                    dataManual: dataEscolhidaStr, 
-                    horaManual: horaInjetada, 
-                    tipo: tipo,
-                    lat: geo.lat, 
-                    lon: geo.lon, 
-                    noLocal: geo.ok,
-                    dataHoraDispositivo: dataHoraDispositivo, // Campo novo para o banco
-                    obs: geo.ok ? `Registrado via App em ${dataHoraDispositivo} (No Local)` : `Registrado via App em ${dataHoraDispositivo} (Fora do Local - Lat:${geo.lat}, Lon:${geo.lon})`
-                });
-            }
-        }
-
-        if (reqs.length === 0) { fecharModalPonto(); return abrirModal("Aviso", "Nenhum horário novo foi digitado para ser salvo.", "erro"); }
-
-        let tdEditDoDia = document.querySelector(`.td-edit[data-dia="${dia}"]`);
-        if(tdEditDoDia) {
-            let trDia = tdEditDoDia.parentElement;
-            if(valoresTiradosDaTela['Entrada']) trDia.querySelector('[data-col="e"]').innerText = valoresTiradosDaTela['Entrada'];
-            if(valoresTiradosDaTela['Almoço']) trDia.querySelector('[data-col="ia"]').innerText = valoresTiradosDaTela['Almoço'];
-            if(valoresTiradosDaTela['Retorno']) trDia.querySelector('[data-col="ta"]').innerText = valoresTiradosDaTela['Retorno'];
-            if(valoresTiradosDaTela['Saída Final']) trDia.querySelector('[data-col="s"]').innerText = valoresTiradosDaTela['Saída Final'];
-            
-            trDia.querySelectorAll('.td-edit').forEach(cel => formatarCampo(cel));
-        }
-
-        fecharModalPonto();
-        mostrarLoader("GRAVANDO NO BANCO DE DADOS...");
-
-        let sucessoTotal = true; let msgErro = "";
-        for (let req of reqs) {
-            try {
-                let res = await fetch(WEB_APP_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ acao: "registrar", dados: req }) }).then(r => r.json());
-                if (res.sucesso === false) { sucessoTotal = false; msgErro = res.msg; }
-            } catch(e) { sucessoTotal = false; msgErro = "Falha de conexão com a planilha."; }
-        }
-
-        ocultarLoader();
-        if (sucessoTotal) abrirModal("Sucesso", `Os horários foram registrados corretamente e o GPS salvo.`, "sucesso");
-        else abrirModal("Aviso", "Ocorreu um problema em um dos envios: " + msgErro, "erro");
-        
-        carregarHistorico();
-    }
-
-    function carregarHistorico() {
-      fetch(WEB_APP_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ acao: "historico", nome: currentUser.user.nome })
-      }).then(r => r.json()).then(res => { 
-          historicoGlobal = res; 
-          atualizarPainelFrontEnd();
-          gerarFolhaTradicional(); 
-      });
-    }
-
     function formataHorasMinutos(minutos) {
         if(minutos === null || isNaN(minutos) || minutos === undefined) return "--:--";
         let h = Math.floor(Math.abs(minutos) / 60).toString().padStart(2, '0');
@@ -592,25 +681,19 @@
         if(!str || typeof str !== 'string' || str.trim() === '' || str.includes('-')) return null; 
         str = str.toLowerCase().replace(/[h\.]/g, ':').replace(/[^\d:]/g, ''); 
         if (str.endsWith(':')) str = str.slice(0, -1);
-
         let p = str.split(':'); 
-        if (p.length === 2) { 
-            let h = parseInt(p[0] || '0', 10); let m = parseInt(p[1] || '0', 10); return (h * 60) + m; 
-        } else if (p.length === 1 && p[0].length > 0) {
+        if (p.length === 2) { return (parseInt(p[0] || '0', 10) * 60) + parseInt(p[1] || '0', 10); } 
+        else if (p.length === 1 && p[0].length > 0) {
             let nums = p[0]; 
             if (nums.length <= 2) return parseInt(nums, 10) * 60; 
-            else {
-                let h = parseInt(nums.substring(0, nums.length - 2), 10); let m = parseInt(nums.substring(nums.length - 2), 10); return (h * 60) + m;
-            }
+            else return (parseInt(nums.substring(0, nums.length - 2), 10) * 60) + parseInt(nums.substring(nums.length - 2), 10);
         }
         return null; 
     }
 
     function formatarHoraString(str) {
-        if (!str) return "";
         let mins = getMinutos(str);
-        if (mins === null) return str;
-        return formataHorasMinutos(mins);
+        return mins === null ? (str || "") : formataHorasMinutos(mins);
     }
 
     function formatarCampo(celula) {
@@ -638,41 +721,23 @@
 
     function getProximoFeriado() {
         if (!feriadosGlobal || feriadosGlobal.length === 0) return null;
-        
-        let hoje = new Date();
-        hoje.setHours(0,0,0,0);
-        let anoAtual = hoje.getFullYear();
+        let hoje = new Date(); hoje.setHours(0,0,0,0);
         let futuros = [];
-
         feriadosGlobal.forEach(f => {
-            let dataStr = typeof f === 'string' ? f : f.data;
-            let nome = typeof f === 'string' ? "Feriado/Folga" : (f.nome || f.descricao || "Feriado");
-            if (!dataStr) return;
-
-            let partes = dataStr.split('/');
+            let partes = f.data.split('/');
             if(partes.length >= 2) {
-                let d = parseInt(partes[0]);
-                let m = parseInt(partes[1]);
-                let y = partes.length === 3 ? parseInt(partes[2]) : anoAtual;
-                
-                let dataObj = new Date(y, m - 1, d);
-                if (dataObj < hoje && partes.length === 2) { dataObj.setFullYear(anoAtual + 1); }
-
-                if (dataObj >= hoje) { futuros.push({ dataObj, dataStr: `${d}/${m}`, nome }); }
+                let dataObj = new Date(hoje.getFullYear(), parseInt(partes[1]) - 1, parseInt(partes[0]));
+                if (dataObj < hoje) dataObj.setFullYear(hoje.getFullYear() + 1);
+                if (dataObj >= hoje) futuros.push({ dataObj, dataStr: `${partes[0]}/${partes[1]}`, nome: f.nome });
             }
         });
-
-        if (futuros.length > 0) {
-            futuros.sort((a, b) => a.dataObj - b.dataObj);
-            return futuros[0]; 
-        }
+        if (futuros.length > 0) { futuros.sort((a, b) => a.dataObj - b.dataObj); return futuros[0]; }
         return null;
     }
 
     function gerarResumoTodosMeses() {
         if (!historicoGlobal || historicoGlobal.length === 0) return "";
         let diasMap = {};
-        
         historicoGlobal.forEach(r => {
             if(!diasMap[r.data]) diasMap[r.data] = {e:null, ia:null, ta:null, s:null};
             if(r.tipo==='Entrada') diasMap[r.data].e = r.hora;
@@ -684,12 +749,9 @@
         let mesesMap = {};
         for(let data in diasMap) {
             let [d, m, y] = data.split('/');
-            let diaNum = parseInt(d); let mesNum = parseInt(m); let anoNum = parseInt(y);
-
-            let mesRef = diaNum >= 11 ? mesNum + 1 : mesNum;
-            let anoRef = anoNum;
+            let mesRef = parseInt(d) >= 11 ? parseInt(m) + 1 : parseInt(m);
+            let anoRef = parseInt(y);
             if(mesRef > 12) { mesRef = 1; anoRef++; }
-
             let key = `${String(mesRef).padStart(2,'0')}/${anoRef}`;
             if(!mesesMap[key]) mesesMap[key] = { trab: 0, saldo: 0 };
 
@@ -698,49 +760,37 @@
             if(e !== null && s !== null) {
                 let tempoBruto = (s < e) ? (s + 1440 - e) : (s - e);
                 let tempoPausa = (ia !== null && ta !== null) ? (ta < ia ? ta + 1440 - ia : ta - ia) : 0;
-                let minTrab = tempoBruto - tempoPausa; if(minTrab < 0) minTrab = 0;
-                let saldoDia = minTrab - 480; 
+                let minTrab = Math.max(0, tempoBruto - tempoPausa); 
                 mesesMap[key].trab += minTrab;
-                mesesMap[key].saldo += saldoDia;
+                mesesMap[key].saldo += (minTrab - 480);
             }
         }
 
-        let chaves = Object.keys(mesesMap).sort((a,b) => {
-            let [mA, yA] = a.split('/'); let [mB, yB] = b.split('/');
-            return (yA + mA).localeCompare(yB + mB);
-        });
-
+        let chaves = Object.keys(mesesMap).sort((a,b) => (a.split('/')[1] + a.split('/')[0]).localeCompare(b.split('/')[1] + b.split('/')[0]));
         if(chaves.length === 0) return "";
         
         let htmlStr = `<br><br><b style="color:var(--primary); font-size:12px; text-transform:uppercase;">📊 Balanço Geral de Horas:</b><br>`;
         chaves.forEach(k => {
-            let min = mesesMap[k].trab; let sld = mesesMap[k].saldo;
+            let sld = mesesMap[k].saldo;
             let corSld = sld > 0 ? "var(--success)" : (sld < 0 ? "var(--danger)" : "var(--text-main)");
-            let sinal = sld > 0 ? "+" : (sld < 0 ? "-" : "");
-            htmlStr += `<span style="display:inline-block; margin-top:4px;">• <b>Ref ${k}:</b> Trab <b>${formataHorasMinutos(min)}</b> | Saldo <b style="color:${corSld}">${sinal}${formataHorasMinutos(sld)}</b></span><br>`;
+            htmlStr += `<span style="display:inline-block; margin-top:4px;">• <b>Ref ${k}:</b> Trab <b>${formataHorasMinutos(mesesMap[k].trab)}</b> | Saldo <b style="color:${corSld}">${sld > 0 ? "+" : (sld < 0 ? "-" : "")}${formataHorasMinutos(sld)}</b></span><br>`;
         });
         return htmlStr;
     }
 
     function verificarPermissaoNotificacao() {
-        if (!localStorage.getItem('notif_respondido')) {
-            document.getElementById('box-notificacao').style.display = 'flex';
-        }
+        if (!localStorage.getItem('notif_respondido')) document.getElementById('box-notificacao').style.display = 'flex';
     }
 
     function tratarNotificacao(aceitou, btn) {
         localStorage.setItem('notif_respondido', 'true');
         if(aceitou) {
-            if ("Notification" in window) {
-               Notification.requestPermission().then(perm => {
-                   if(perm === "granted") new Notification("Ponto Laranjeiras", { body: "Notificações ativadas com sucesso!" });
-               });
-            }
+            if ("Notification" in window) Notification.requestPermission().then(perm => { if(perm === "granted") new Notification("Ponto Laranjeiras", { body: "Ativado!" }); });
             btn.parentElement.innerHTML = `<span style="color:var(--success); font-weight:700; font-size:13px;">✓ Notificações Ativadas</span>`;
         } else {
             btn.parentElement.innerHTML = `<span style="color:var(--text-muted); font-weight:600; font-size:13px;">Dispensado</span>`;
         }
-        setTimeout(() => { document.getElementById('box-notificacao').style.display = 'none'; }, 2000);
+        setTimeout(() => document.getElementById('box-notificacao').style.display = 'none', 2000);
     }
 
     function atualizarPainelFrontEnd() {
@@ -751,10 +801,10 @@
            if(r.tipo === 'Retorno') ret = r.hora; if(r.tipo === 'Saída Final') sai = r.hora;
         });
 
-        let primeiroNome = currentUser ? currentUser.user.nome.split(' ')[0] : 'Servidor';
-        let horaAtual = new Date().getHours(); let saudacao = horaAtual < 12 ? "Bom dia" : (horaAtual < 18 ? "Boa tarde" : "Boa noite");
-
-        let textoConversa = `${saudacao}, <b>${primeiroNome}</b>. `;
+        let horaAtual = new Date().getHours(); 
+        let saudacao = horaAtual < 12 ? "Bom dia" : (horaAtual < 18 ? "Boa tarde" : "Boa noite");
+        let textoConversa = `${saudacao}, <b>${currentUser.user.nome.split(' ')[0]}</b>. `;
+        
         if (ent === '--:--') textoConversa += `Seu dia ainda não tem registros hoje. Clique em Abrir Painel para começar. `;
         else {
             textoConversa += `Entrada hoje às <b>${ent}</b>. `;
@@ -763,24 +813,12 @@
             if (sai !== '--:--') textoConversa += `Ponto encerrado às <b>${sai}</b>.`;
         }
 
-        if (climaAtual) {
-            let condicao = climaAtual.weathercode <= 3 ? "céu limpo" : (climaAtual.weathercode < 60 ? "nublado" : "chuvoso");
-            let emoji = climaAtual.weathercode <= 3 ? "☀️" : (climaAtual.weathercode < 60 ? "☁️" : "🌧️");
-            let chuvaAlerta = climaAtual.weathercode >= 50 ? " Atenção: Previsão de chuva, previna-se!" : "";
-            textoConversa += `<br><br>${emoji} <b>Clima Local:</b> ${Math.round(climaAtual.temperature)}°C, ${condicao}.${chuvaAlerta}`;
-        }
-
-        let trH = new Date().getHours();
-        let transito = (trH >= 7 && trH <= 9) || (trH >= 17 && trH <= 19) ? "🚗 <b>Trânsito:</b> Intenso na região (horário de pico)." : "🚙 <b>Trânsito:</b> Fluindo bem no momento.";
-        textoConversa += `<br>${transito}`;
-
+        if (climaAtual) textoConversa += `<br><br>${climaAtual.weathercode <= 3 ? "☀️" : "☁️"} <b>Clima Local:</b> ${Math.round(climaAtual.temperature)}°C.`;
+        
         let proxFeriado = getProximoFeriado();
-        if (proxFeriado) {
-            textoConversa += `<br><br>🎉 <b>Lembrete:</b> O próximo descanso será dia <b>${proxFeriado.dataStr}</b> (${proxFeriado.nome}).`;
-        }
+        if (proxFeriado) textoConversa += `<br><br>🎉 <b>Lembrete:</b> Próximo descanso será dia <b>${proxFeriado.dataStr}</b> (${proxFeriado.nome}).`;
 
         textoConversa += gerarResumoTodosMeses();
-
         animarDigitacao(document.getElementById('msg-conversa'), textoConversa, 8);
         verificarPermissaoNotificacao();
     }
@@ -805,7 +843,6 @@
             if(s) historicoGlobal.push({ data: dataFormatada, hora: s, tipo: 'Saída Final' });
         });
 
-        // Salvar as anotações/atestados
         let obsBox = document.querySelector('.obs-edit');
         if(obsBox) { edicoes["_obs"] = obsBox.innerText; }
 
@@ -816,16 +853,17 @@
 
     function calcularLinhaA4(celulaEditada, requiresSave = true) {
         let tr = celulaEditada.parentElement;
-        let valE = tr.querySelector('[data-col="e"]')?.innerText.trim() || ''; let valIa = tr.querySelector('[data-col="ia"]')?.innerText.trim() || '';
-        let valTa = tr.querySelector('[data-col="ta"]')?.innerText.trim() || ''; let valS = tr.querySelector('[data-col="s"]')?.innerText.trim() || '';
-        let e = getMinutos(valE); let ia = getMinutos(valIa); let ta = getMinutos(valTa); let s = getMinutos(valS);
+        let e = getMinutos(tr.querySelector('[data-col="e"]')?.innerText.trim() || ''); 
+        let ia = getMinutos(tr.querySelector('[data-col="ia"]')?.innerText.trim() || '');
+        let ta = getMinutos(tr.querySelector('[data-col="ta"]')?.innerText.trim() || ''); 
+        let s = getMinutos(tr.querySelector('[data-col="s"]')?.innerText.trim() || '');
         let tdTotal = tr.querySelector('.td-total'); let tdSaldo = tr.querySelector('.td-saldo'); let tdAss = tr.querySelector('.td-ass'); 
         
         if(!tdTotal) return;
         if(e !== null && s !== null) {
             let tempoBruto = (s < e) ? (s + 1440 - e) : (s - e);
             let tempoPausa = (ia !== null && ta !== null) ? (ta < ia ? ta + 1440 - ia : ta - ia) : 0;
-            let minTrab = tempoBruto - tempoPausa; if(minTrab < 0) minTrab = 0; 
+            let minTrab = Math.max(0, tempoBruto - tempoPausa); 
             
             tdTotal.innerText = formataHorasMinutos(minTrab); tdTotal.setAttribute('data-minutos', minTrab);
             let saldoDia = minTrab - 480;
@@ -834,7 +872,7 @@
             tdSaldo.setAttribute('data-saldo', saldoDia);
         } else { tdTotal.innerText = ""; tdTotal.removeAttribute('data-minutos'); tdSaldo.innerText = ""; tdSaldo.removeAttribute('data-saldo'); }
 
-        if (tdAss) tdAss.innerHTML = (valE !== '' && valS !== '' && currentUser.user.assinatura) ? `<img src="${currentUser.user.assinatura}" style="max-height: 20px; vertical-align: middle;">` : "";
+        if (tdAss) tdAss.innerHTML = (e !== null && s !== null && currentUser.user.assinatura) ? `<img src="${currentUser.user.assinatura}" style="max-height: 20px; vertical-align: middle;">` : "";
         calcularTotalFolhaA4(); if(requiresSave) salvarFolhaA4(true);
     }
 
@@ -852,20 +890,18 @@
       if(!currentUser) return;
       const valMes = document.getElementById('tradMesData').value; if(!valMes) return;
       let [ano, mes] = valMes.split('-'); ano = parseInt(ano); mes = parseInt(mes);
-      let prevMes = mes - 1; let prevAno = ano; if(prevMes === 0) { prevMes = 12; prevAno--; }
+      let prevMes = mes === 1 ? 12 : mes - 1; let prevAno = mes === 1 ? ano - 1 : ano;
 
       const dataInicio = new Date(prevAno, prevMes - 1, 11); const dataFim = new Date(ano, mes - 1, 10);
       let edicoesSalvas = JSON.parse(localStorage.getItem('folhaManual_' + currentUser.loginID + '_' + valMes)) || {};
-      let horarioOficial = "07h - 16h"; let nomeUsuario = currentUser.user.nome.toLowerCase(); let idUsuario = currentUser.loginID.toLowerCase();
-      if (nomeUsuario.includes("karina") || idUsuario.includes("karina") || nomeUsuario.includes("alane") || idUsuario.includes("alane")) { horarioOficial = "08h - 17h"; } 
+      let horarioOficial = currentUser.loginID.match(/karina|alane/) ? "08h - 17h" : "07h - 16h"; 
       let tagAssinatura = currentUser.user.assinatura ? `<img src="${currentUser.user.assinatura}" style="max-height: 20px; vertical-align: middle;">` : "";
 
       let html = `<div class="folha-container">
         <div class="doc-header">
            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Bras%C3%A3o_de_Caieiras.svg/500px-Bras%C3%A3o_de_Caieiras.svg.png" style="filter:grayscale(100%);">
            <div class="doc-header-text">
-             <h2>Secretaria de Saúde</h2>
-             <p>Av. Prof. Carvalho Pinto, 207 - Centro - Caieiras</p>
+             <h2>Secretaria de Saúde</h2><p>Av. Prof. Carvalho Pinto, 207 - Centro - Caieiras</p>
            </div>
         </div>
         
@@ -882,9 +918,7 @@
       while(curDate <= dataFim) {
         let diaNum = ('0' + curDate.getDate()).slice(-2); 
         let mesNum = ('0' + (curDate.getMonth() + 1)).slice(-2);
-        
         let dataIsoFormatada = `${diaNum}/${mesNum}/${curDate.getFullYear()}`; 
-        let diaSemana = curDate.getDay(); 
         
         let regsDia = historicoGlobal.filter(h => h.data === dataIsoFormatada); 
         let e='', ia='', ta='', s='', folga=false;
@@ -901,7 +935,7 @@
         let finalAss = (finalE !== '' && finalS !== '') ? tagAssinatura : '';
 
         if(folga) html += `<tr class="tr-folga"><td style="font-weight:bold;">${diaNum}/${mesNum}</td><td colspan="6">F O L G A / F E R I A D O</td><td class="td-ass"></td></tr>`;
-        else if(diaSemana === 0 || diaSemana === 6) html += `<tr class="tr-ds"><td style="font-weight:bold;">${diaNum}/${mesNum}</td><td colspan="6" style="text-align:left; padding-left:15px;">${diaSemana === 0 ? "DOMINGO" : "SÁBADO"}</td><td class="td-ass"></td></tr>`;
+        else if(curDate.getDay() === 0 || curDate.getDay() === 6) html += `<tr class="tr-ds"><td style="font-weight:bold;">${diaNum}/${mesNum}</td><td colspan="6" style="text-align:left; padding-left:15px;">${curDate.getDay() === 0 ? "DOMINGO" : "SÁBADO"}</td><td class="td-ass"></td></tr>`;
         else {
           html += `<tr><td style="font-weight:bold; font-size:11px;">${diaNum}/${mesNum}</td>
             <td class="td-edit" contenteditable="plaintext-only" inputmode="numeric" data-dia="${diaNum}" data-col="e" oninput="calcularLinhaA4(this, true)" onblur="formatarCampo(this)">${finalE}</td>
@@ -942,43 +976,26 @@
       document.querySelectorAll('#folha-a4-render .td-edit[data-col="e"]').forEach(td => calcularLinhaA4(td, false));
     }
 
-    function sincronizarComNuvem() {
-        const valMes = document.getElementById('tradMesData').value;
-        if(!valMes || !currentUser) return;
-        let edicoesSalvas = JSON.parse(localStorage.getItem('folhaManual_' + currentUser.loginID + '_' + valMes)) || {};
-        
-        // Captura a data e hora exata do dispositivo no momento da sincronização
-        let dataHoraDispositivo = new Date().toLocaleString('pt-BR'); 
-
-        let payload = {
-            acao: "sincronizar",
-            login: currentUser.loginID,
-            mesAno: valMes,
-            edicoes: edicoesSalvas,
-            lat: geo.lat,
-            lon: geo.lon,
-            noLocal: geo.ok,
-            dataHoraDispositivo: dataHoraDispositivo, // Campo novo para o banco
-            obs: geo.ok ? `Sincronizado na Tela em ${dataHoraDispositivo} (No Local)` : `Sincronizado na Tela em ${dataHoraDispositivo} (Fora do Local - Lat:${geo.lat})`
-        };
-
-        mostrarLoader("SINCRONIZANDO COM A NUVEM...");
-        fetch(WEB_APP_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload)
-        }).then(r => r.json()).then(res => {
-            ocultarLoader();
-            if(res.sucesso) { abrirModal("Nuvem Atualizada", "Salvo no banco de dados!", "sucesso"); carregarHistorico(); } 
-            else abrirModal("Erro", res.msg, "erro");
-        }).catch(err => { ocultarLoader(); abrirModal("Erro", "Falha na conexão.", "erro"); });
-    }
-    
-    // Fecha a "Inteligência do Ponto" ao rolar a página para baixo
-  window.addEventListener('scroll', () => {
-    const chatBubble = document.querySelector('.chat-bubble');
-    // Se a página for rolada mais de 50 pixels e o painel estiver aberto, ele remove o atributo 'open'
-    if (window.scrollY > 50 && chatBubble && chatBubble.hasAttribute('open')) {
-      chatBubble.removeAttribute('open');
-    }
-  });
+    // Oculta a conversa ao rolar a página
+    window.addEventListener('scroll', () => {
+      const chatBubble = document.querySelector('.chat-bubble');
+      if (window.scrollY > 50 && chatBubble && chatBubble.hasAttribute('open')) {
+        chatBubble.removeAttribute('open');
+      }
+    });
+  
+    // EXPORTANDO FUNÇÕES PARA O HTML
+    window.fazerLogin = fazerLogin;
+    window.abrirModalPonto = abrirModalPonto;
+    window.fecharModalPonto = fecharModalPonto;
+    window.carregarHorariosDoDiaSelecionado = carregarHorariosDoDiaSelecionado;
+    window.salvarHorariosLote = salvarHorariosLote;
+    window.tratarNotificacao = tratarNotificacao;
+    window.salvarFolhaA4 = salvarFolhaA4;
+    window.calcularLinhaA4 = calcularLinhaA4;
+    window.formatarCampo = formatarCampo;
+    window.gerarFolhaTradicional = gerarFolhaTradicional;
+    window.sincronizarComNuvem = sincronizarComNuvem;
   </script>
 </body>
 </html>
