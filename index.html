@@ -597,7 +597,7 @@
         let promises = [];
 
         for(let diaStr in edicoesSalvas) {
-            if(diaStr === '_obs') continue;
+            if(diaStr === '_obs') continue; // Pula a observação aqui para processar só os dias
             
             let objDoDia = edicoesSalvas[diaStr];
             let diaNum = parseInt(diaStr);
@@ -620,11 +620,9 @@
                 if (valorEditado !== undefined) {
                     let chaveFirebase = `${dd}_${mm}_${anoDoDia}_${item.tipo}`;
                     
-                    // CORREÇÃO: Se a pessoa apagou a célula, mandamos um comando "null" para deletar do Firebase.
                     if (valorEditado === "") {
                         promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebase}`), null));
                     } else {
-                        // Salva o valor novo normalmente
                         let payload = {
                             usuario: currentUser.user.nome,
                             data: dataFormatada,
@@ -640,10 +638,20 @@
             }
         }
 
+        // NOVIDADE: Salva as observações do mês inteiro em um registro especial no Firebase
+        if (edicoesSalvas['_obs'] !== undefined) {
+            let chaveFirebaseObs = `OBS_MENSAL_${valMes}`;
+            let payloadObs = {
+                tipo: 'ObservacaoMensal',
+                mesAno: valMes,
+                texto: edicoesSalvas['_obs']
+            };
+            promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebaseObs}`), payloadObs));
+        }
+
         try {
             if(promises.length > 0) await Promise.all(promises);
             
-            // CORREÇÃO: Limpa o rascunho do celular para a folha ser redesenhada 100% via Firebase!
             localStorage.removeItem('folhaManual_' + currentUser.loginID + '_' + valMes);
             
             ocultarLoader();
@@ -983,7 +991,9 @@
         curDate.setDate(curDate.getDate() + 1);
       }
 
-      let obsSalvas = edicoesSalvas["_obs"] || "";
+      // NOVIDADE: Busca a anotação salva no Firebase e exibe na tela
+      let obsDoFirebase = historicoGlobal.find(h => h.tipo === 'ObservacaoMensal' && h.mesAno === valMes)?.texto || "";
+      let obsSalvas = edicoesSalvas["_obs"] !== undefined ? edicoesSalvas["_obs"] : obsDoFirebase;
 
       html += `</table>
         <div class="resumo-espelho">
@@ -1032,6 +1042,81 @@
     window.formatarCampo = formatarCampo;
     window.gerarFolhaTradicional = gerarFolhaTradicional;
     window.sincronizarComNuvem = sincronizarComNuvem;
+
+    // --- SISTEMA DE DESPERTADOR / NOTIFICAÇÕES REAIS ---
+    let ultimaNotificacaoEnviada = ""; // Evita mandar a mesma notificação repetida no mesmo minuto
+
+    function checarDespertador() {
+        if (!currentUser || Notification.permission !== "granted") return;
+
+        const agora = new Date();
+        const hora = String(agora.getHours()).padStart(2, '0');
+        const min = String(agora.getMinutes()).padStart(2, '0');
+        const horaAtualStr = `${hora}:${min}`;
+        const diaSemana = agora.getDay();
+
+        // Não apita de final de semana
+        if (diaSemana === 0 || diaSemana === 6) return;
+
+        // Horários dependendo do usuário (Karina/Alane vs Outros)
+        const isHorarioTarde = currentUser.loginID.match(/karina|alane/);
+
+        let mensagens = {};
+
+        if (isHorarioTarde) {
+            // Horários para quem trabalha 08h - 17h
+            mensagens = {
+                "07:55": "Bom dia! Quase na hora de registrar sua entrada (08h).",
+                "12:00": "Hora do almoço! Não se esqueça de registrar a saída.",
+                "13:00": "Fim do almoço! Registre seu retorno.",
+                "17:00": "Fim de expediente! Registre sua saída final."
+            };
+        } else {
+            // Horários padrão 07h - 16h
+            mensagens = {
+                "06:55": "Bom dia! Quase na hora de registrar sua entrada (07h).",
+                "12:00": "Hora do almoço! Não se esqueça de registrar a saída.",
+                "13:00": "Fim do almoço! Registre seu retorno.",
+                "16:00": "Fim de expediente! Registre sua saída final."
+            };
+        }
+
+        // Se a hora atual bate com algum alarme e ainda não enviamos essa notificação
+        if (mensagens[horaAtualStr] && ultimaNotificacaoEnviada !== horaAtualStr) {
+            enviarNotificacaoReal("Ponto Laranjeiras", mensagens[horaAtualStr]);
+            ultimaNotificacaoEnviada = horaAtualStr; // Marca que já enviou
+        }
+        
+        // Limpa a memória à meia-noite para o dia seguinte
+        if (horaAtualStr === "00:00") ultimaNotificacaoEnviada = "";
+    }
+
+    function enviarNotificacaoReal(titulo, corpo) {
+        if (Notification.permission === "granted") {
+            try {
+                // Tenta usar ServiceWorker (Melhor para Celular/PWA)
+                navigator.serviceWorker.getRegistration().then(function(reg) {
+                    if (reg) {
+                        reg.showNotification(titulo, {
+                            body: corpo,
+                            icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Bras%C3%A3o_de_Caieiras.svg/192px-Bras%C3%A3o_de_Caieiras.svg.png",
+                            vibrate: [200, 100, 200], // Vibração padrão
+                            requireInteraction: true // A notificação fica na tela até clicar
+                        });
+                    } else {
+                        // Se não tiver ServiceWorker, tenta a notificação padrão web
+                        new Notification(titulo, { body: corpo, icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Bras%C3%A3o_de_Caieiras.svg/192px-Bras%C3%A3o_de_Caieiras.svg.png" });
+                    }
+                });
+            } catch (e) {
+                // Fallback de segurança
+                new Notification(titulo, { body: corpo });
+            }
+        }
+    }
+
+    // Inicia o "Relógio" do sistema: ele checa a hora a cada 30 segundos
+    setInterval(checarDespertador, 30000);
   </script>
 </body>
 </html>
