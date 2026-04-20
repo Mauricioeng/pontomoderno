@@ -49,15 +49,7 @@
     .login-box h2 { margin: 10px 0 24px; font-weight: 800; color: var(--text-main); font-size: 24px; }
     
     /* CABEÇALHO COMPACTO */
-   .header { 
-      background: rgba(255, 255, 255, 0.75); /* Mais transparente */
-      backdrop-filter: saturate(180%) blur(16px); /* Efeito Apple */
-      -webkit-backdrop-filter: saturate(180%) blur(16px);
-      padding: 12px 16px; 
-      border-bottom: 1px solid rgba(229, 231, 235, 0.5); /* Borda translúcida */
-      position: sticky; top: 0; z-index: 50; 
-      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-    }
+    .header { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); padding: 12px 16px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
     .header h1 { margin: 0; font-size: 16px; font-weight: 800; letter-spacing: -0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
     .avatar-icon { width: 34px; height: 34px; background: linear-gradient(135deg, var(--primary), #60A5FA); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 13px; letter-spacing: 1px; box-shadow: var(--shadow-sm); flex-shrink: 0; }
     .status-badge { font-size:11px; font-weight:700; padding:6px 10px; border-radius:999px; display:flex; align-items:center; gap:5px; box-shadow: var(--shadow-sm); transition: 0.3s; cursor: pointer; }
@@ -65,15 +57,7 @@
 
     /* LAYOUT & CARDS */
     .container { padding: 16px; max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
-    .card { 
-      background: var(--card); border-radius: 20px; padding: 24px; 
-      box-shadow: var(--shadow-md); border: 1px solid rgba(255,255,255,0.8); 
-      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
-    }
-    .card:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-lg);
-    }
+    .card { background: var(--card); border-radius: 20px; padding: 24px; box-shadow: var(--shadow-md); border: 1px solid rgba(255,255,255,0.5); }
     .card-title { font-size: 12px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
     
     /* ACORDEÃO (DETAILS/SUMMARY) */
@@ -85,16 +69,8 @@
 
     /* INPUTS & BOTÕES */
     label { font-size: 13px; font-weight: 600; margin-bottom: 8px; display: block; color: var(--text-main); }
-    input, select { 
-      width: 100%; background: #F8FAFC; border: 1px solid var(--border); 
-      border-radius: 14px; padding: 14px 16px; font-size: 15px; margin-bottom: 16px; 
-      outline: none; transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; 
-      color: var(--text-main); font-weight: 500;
-    }
-    input:focus, select:focus { 
-      border-color: var(--primary); background: #FFFFFF; 
-      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1), inset 0 2px 4px rgba(0,0,0,0.02); 
-    }
+    input, select { width: 100%; background: #F9FAFB; border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; font-size: 15px; margin-bottom: 16px; outline: none; transition: all 0.2s; color: var(--text-main); }
+    input:focus, select:focus { border-color: var(--primary); background: #EFF6FF; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
     
     .btn { width: 100%; background: var(--primary); color: white; font-size: 15px; font-weight: 700; border: none; border-radius: 14px; padding: 16px; cursor: pointer; transition: all 0.2s; display:flex; justify-content:center; align-items:center; gap:8px; box-shadow: 0 4px 6px rgba(37,99,235,0.2); }
     .btn:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 6px 8px rgba(37,99,235,0.3); }
@@ -116,38 +92,6 @@
       opacity: 0.6; backdrop-filter: blur(4px); transition: all 0.3s ease; 
     }
     .btn-flutuante:hover, .btn-flutuante:active { opacity: 1; transform: scale(1.05); }
-
-    /* ANIMAÇÃO DO CHECK DE AUTOSAVE PREMIUM */
-    .svg-success {
-        width: 28px;
-        height: 28px;
-        display: block;
-    }
-    .svg-success circle {
-        stroke-dasharray: 166;
-        stroke-dashoffset: 166;
-        stroke-width: 3;
-        stroke-miterlimit: 10;
-        stroke: white;
-        fill: none;
-        animation: strokeCircle 0.4s cubic-bezier(0.65, 0, 0.45, 1) forwards;
-    }
-    .svg-success path {
-        stroke-dasharray: 48;
-        stroke-dashoffset: 48;
-        stroke: white;
-        stroke-width: 4;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        fill: none;
-        animation: strokeCheck 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.4s forwards;
-    }
-    @keyframes strokeCircle {
-        100% { stroke-dashoffset: 0; }
-    }
-    @keyframes strokeCheck {
-        100% { stroke-dashoffset: 0; }
-    }
 
     /* MODAIS */
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center; padding: 20px; animation: fadeIn 0.2s; }
@@ -331,7 +275,7 @@
         
         <div style="display:flex; flex-direction:column; gap:10px;">
           <label>Mês de Fechamento (Dia 11 a 10)</label>
-          <input type="month" id="tradMesData" onchange="gerarFolhaTradicional()">
+          <input type="month" id="tradMesData" value="2026-04" onchange="gerarFolhaTradicional()">
           
           <div style="display:flex; gap:12px; align-items: center; background: #F0FDF4; padding: 12px; border-radius: 12px; border: 1px solid #BBF7D0;">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
@@ -354,8 +298,9 @@
   </div>
 
   <!-- Botão Flutuante Discreto (Rodapé) -->
- <div id="btnSalvarNuvem" class="btn-flutuante no-print" style="display:none; pointer-events:none;" title="Status de Salvamento">
-  </div>
+  <button id="btnSalvarNuvem" class="btn-flutuante no-print" style="display:none;" onclick="sincronizarComNuvem()" title="Salvar na Nuvem">
+     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+  </button>
 
   <div id="modalPonto" class="modal-overlay">
     <div class="modal-box" style="padding: 24px;">
@@ -480,25 +425,7 @@
     let feriadosGlobal = FERIADOS_2026;
     let climaAtual = null;
 
-   window.onload = () => {
-        // INTELIGÊNCIA DO MÊS DE FECHAMENTO (Dia 11 a 10)
-        const hoje = new Date();
-        let anoFechamento = hoje.getFullYear();
-        let mesFechamento = hoje.getMonth() + 1; // getMonth começa em 0
-        
-        // Se já passou do dia 10, o espelho foca no mês seguinte
-        if (hoje.getDate() > 10) {
-            mesFechamento++;
-            if (mesFechamento > 12) {
-                mesFechamento = 1;
-                anoFechamento++;
-            }
-        }
-        
-        // Preenche o input automaticamente com YYYY-MM
-        document.getElementById('tradMesData').value = `${anoFechamento}-${String(mesFechamento).padStart(2, '0')}`;
-
-        // Animação de Loader
+    window.onload = () => {
         setTimeout(() => {
             document.getElementById('global-loader').style.opacity = '0';
             setTimeout(() => {
@@ -557,7 +484,7 @@
           let iniciais = nomes[0].charAt(0).toUpperCase() + (nomes.length > 1 ? nomes[nomes.length-1].charAt(0).toUpperCase() : '');
           document.getElementById('userAvatar').innerText = iniciais;
           document.getElementById('userName').innerText = nomes[0] + (nomes.length > 1 ? ' ' + nomes[nomes.length-1] : ''); 
-          
+          document.getElementById('btnSalvarNuvem').style.display = 'flex'; 
           
           carregarHistorico(); 
           iniciarGps(); 
@@ -966,13 +893,9 @@
         let obsBox = document.querySelector('.obs-edit');
         if(obsBox) { edicoes["_obs"] = obsBox.innerText; }
 
-      localStorage.setItem('folhaManual_' + currentUser.loginID + '_' + valMes, JSON.stringify(edicoes));
-        
-        // MUDANÇA AQUI: Só atualiza o chat frontal se NÃO for silencioso
-        if(!silencioso) {
-             atualizarPainelFrontEnd(); 
-             abrirModal("Sincronizado", "Edições salvas na tela localmente!", "sucesso");
-        }
+        localStorage.setItem('folhaManual_' + currentUser.loginID + '_' + valMes, JSON.stringify(edicoes));
+        atualizarPainelFrontEnd(); 
+        if(!silencioso) abrirModal("Sincronizado", "Edições salvas na tela localmente!", "sucesso");
     }
 
     function calcularLinhaA4(celulaEditada, requiresSave = true) {
@@ -997,7 +920,7 @@
         } else { tdTotal.innerText = ""; tdTotal.removeAttribute('data-minutos'); tdSaldo.innerText = ""; tdSaldo.removeAttribute('data-saldo'); }
 
         if (tdAss) tdAss.innerHTML = (e !== null && s !== null && currentUser.user.assinatura) ? `<img src="${currentUser.user.assinatura}" style="max-height: 20px; vertical-align: middle;">` : "";
-       calcularTotalFolhaA4(); if(requiresSave) dispararAutoSave();
+        calcularTotalFolhaA4(); if(requiresSave) salvarFolhaA4(true);
     }
 
     function calcularTotalFolhaA4() {
@@ -1087,7 +1010,7 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
             Observações e Atestados
           </div>
-         <div class="obs-edit" contenteditable="plaintext-only" oninput="dispararAutoSave()">${obsSalvas}</div>
+          <div class="obs-edit" contenteditable="plaintext-only" oninput="salvarFolhaA4(true)">${obsSalvas}</div>
         </div>
 
         <div style="margin-top: 40px; text-align: center;">
@@ -1122,96 +1045,6 @@
     window.formatarCampo = formatarCampo;
     window.gerarFolhaTradicional = gerarFolhaTradicional;
     window.sincronizarComNuvem = sincronizarComNuvem;
-    window.dispararAutoSave = dispararAutoSave;
-
-    // --- SISTEMA DE AUTO-SAVE COM DEBOUNCE E ANIMAÇÃO ---
-    let autoSaveTimeout = null;
-
-    function dispararAutoSave() {
-        const indicador = document.getElementById('btnSalvarNuvem');
-        if (indicador) {
-            indicador.style.display = 'flex';
-            indicador.style.opacity = '1';
-            indicador.style.background = '#F59E0B'; // Amarelo (Salvando)
-            indicador.innerHTML = `<div class="modern-spinner" style="width:20px;height:20px;border-width:2px;border-left-color:white;"></div>`;
-        }
-
-        clearTimeout(autoSaveTimeout);
-        // Aguarda 1.5 segundos de inatividade na digitação para disparar o salvamento
-        autoSaveTimeout = setTimeout(() => {
-            salvarFolhaA4(true); // Salva as variáveis locais silenciosamente
-            sincronizarComNuvemSilencioso(); // Envia pro Firebase
-        }, 1500); 
-    }
-
-    async function sincronizarComNuvemSilencioso() {
-        const valMes = document.getElementById('tradMesData').value;
-        if(!valMes || !currentUser) return;
-        
-        let edicoesSalvas = JSON.parse(localStorage.getItem('folhaManual_' + currentUser.loginID + '_' + valMes)) || {};
-        let partesMes = valMes.split('-'); 
-        let ano = parseInt(partesMes[0]); 
-        let mesInt = parseInt(partesMes[1]);
-        let dataHoraDispositivo = new Date().toLocaleString('pt-BR'); 
-
-        let promises = [];
-
-        // Monta as requisições do espelho igual à função original
-        for(let diaStr in edicoesSalvas) {
-            if(diaStr === '_obs') continue;
-            let objDoDia = edicoesSalvas[diaStr]; let diaNum = parseInt(diaStr);
-            let mesDoDia = (diaNum > 10) ? mesInt - 1 : mesInt; let anoDoDia = ano; 
-            if(mesDoDia === 0) { mesDoDia = 12; anoDoDia--; }
-            
-            let dd = String(diaNum).padStart(2,'0'); let mm = String(mesDoDia).padStart(2,'0');
-            let dataFormatada = `${dd}/${mm}/${anoDoDia}`;
-            let mapeamento = [ { key: 'e', tipo: "Entrada" }, { key: 'ia', tipo: "Almoço" }, { key: 'ta', tipo: "Retorno" }, { key: 's', tipo: "Saída Final" } ];
-
-            for(let item of mapeamento) {
-                let valorEditado = objDoDia[item.key];
-                if (valorEditado !== undefined) {
-                    let chaveFirebase = `${dd}_${mm}_${anoDoDia}_${item.tipo}`;
-                    if (valorEditado === "") {
-                        promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebase}`), null));
-                    } else {
-                        let payload = { usuario: currentUser.user.nome, data: dataFormatada, hora: valorEditado, tipo: item.tipo, noLocal: geo.ok, dataHoraDispositivo: dataHoraDispositivo, obs: `AutoSave Espelho em ${dataHoraDispositivo}` };
-                        promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebase}`), payload));
-                    }
-                }
-            }
-        }
-
-        // Salva a observação
-        if (edicoesSalvas['_obs'] !== undefined) {
-            let chaveFirebaseObs = `OBS_MENSAL_${valMes}`;
-            promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebaseObs}`), { tipo: 'ObservacaoMensal', mesAno: valMes, texto: edicoesSalvas['_obs'] }));
-        }
-
-        try {
-            if(promises.length > 0) await Promise.all(promises);
-            
-            // SUCESSO: Mostra o check animado verde premium
-            const indicador = document.getElementById('btnSalvarNuvem');
-            indicador.style.background = 'var(--success)';
-            indicador.innerHTML = `
-                <svg class="svg-success" viewBox="0 0 52 52">
-                    <circle cx="26" cy="26" r="25"></circle>
-                    <path d="M14.1 27.2l7.1 7.2 16.7-16.8"></path>
-                </svg>
-            `;
-            
-            // Oculta suavemente após mostrar o check por 2,5 segundos
-            setTimeout(() => {
-                indicador.style.opacity = '0';
-            }, 2500);
-
-        } catch (error) {
-            // ERRO: Mostra um "X" vermelho se falhar a conexão
-            const indicador = document.getElementById('btnSalvarNuvem');
-            indicador.style.background = 'var(--danger)';
-            indicador.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
-        }
-    }
 
     // --- SISTEMA DE DESPERTADOR / NOTIFICAÇÕES REAIS ---
     let ultimaNotificacaoEnviada = ""; // Evita mandar a mesma notificação repetida no mesmo minuto
