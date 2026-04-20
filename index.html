@@ -897,7 +897,7 @@
         verificarPermissaoNotificacao();
     }
 
-    function salvarFolhaA4(silencioso = false) {
+   function salvarFolhaA4(silencioso = false) {
         const valMes = document.getElementById('tradMesData').value; if(!valMes) return;
         let edicoes = {}; let partesMes = valMes.split('-'); let ano = parseInt(partesMes[0]); let mesInt = parseInt(partesMes[1]);
 
@@ -907,24 +907,32 @@
             let ta = tr.querySelector('[data-col="ta"]')?.innerText.trim() || ''; let s = tr.querySelector('[data-col="s"]')?.innerText.trim() || '';
             
             edicoes[dia] = {e, ia, ta, s};
-            let mesDoDia = (parseInt(dia) > 10) ? mesInt - 1 : mesInt; let anoDoDia = ano; if(mesDoDia === 0) { mesDoDia = 12; anoDoDia--; }
-            let dataFormatada = `${dia}/${String(mesDoDia).padStart(2,'0')}/${anoDoDia}`;
+            
+            // CORREÇÃO: A atualização da memória local agora fica blindada.
+            // Se for Auto-Save (silencioso), não mexemos na memória ainda, 
+            // para que a função de nuvem consiga detectar a mudança e enviar pro Firebase.
+            if (!silencioso) {
+                let mesDoDia = (parseInt(dia) > 10) ? mesInt - 1 : mesInt; let anoDoDia = ano; if(mesDoDia === 0) { mesDoDia = 12; anoDoDia--; }
+                let dataFormatada = `${dia}/${String(mesDoDia).padStart(2,'0')}/${anoDoDia}`;
 
-            historicoGlobal = historicoGlobal.filter(h => h.data !== dataFormatada);
-            if(e) historicoGlobal.push({ data: dataFormatada, hora: e, tipo: 'Entrada' });
-            if(ia) historicoGlobal.push({ data: dataFormatada, hora: ia, tipo: 'Almoço' });
-            if(ta) historicoGlobal.push({ data: dataFormatada, hora: ta, tipo: 'Retorno' });
-            if(s) historicoGlobal.push({ data: dataFormatada, hora: s, tipo: 'Saída Final' });
+                historicoGlobal = historicoGlobal.filter(h => h.data !== dataFormatada);
+                if(e) historicoGlobal.push({ data: dataFormatada, hora: e, tipo: 'Entrada' });
+                if(ia) historicoGlobal.push({ data: dataFormatada, hora: ia, tipo: 'Almoço' });
+                if(ta) historicoGlobal.push({ data: dataFormatada, hora: ta, tipo: 'Retorno' });
+                if(s) historicoGlobal.push({ data: dataFormatada, hora: s, tipo: 'Saída Final' });
+            }
         });
 
         let obsBox = document.querySelector('.obs-edit');
         if(obsBox) { edicoes["_obs"] = obsBox.innerText; }
 
         localStorage.setItem('folhaManual_' + currentUser.loginID + '_' + valMes, JSON.stringify(edicoes));
-        atualizarPainelFrontEnd(); 
-        if(!silencioso) abrirModal("Sincronizado", "Edições salvas na tela localmente!", "sucesso");
+        
+        if(!silencioso) {
+             atualizarPainelFrontEnd(); 
+             abrirModal("Sincronizado", "Edições salvas na tela localmente!", "sucesso");
+        }
     }
-
     function calcularLinhaA4(celulaEditada, requiresSave = true) {
         let tr = celulaEditada.parentElement;
         let e = getMinutos(tr.querySelector('[data-col="e"]')?.innerText.trim() || ''); 
