@@ -268,7 +268,7 @@
 
     <div class="container">
       
-      <details id="box-inteligencia" class="no-print chat-bubble" open style="background: var(--card); border-radius: 20px; box-shadow: var(--shadow-md); border: 1px solid var(--border); padding: 0;">
+      <details class="no-print chat-bubble" open style="background: var(--card); border-radius: 20px; box-shadow: var(--shadow-md); border: 1px solid var(--border); padding: 0;">
         <summary style="padding: 20px 24px; border-bottom: 1px solid #F3F4F6;">
            <div style="display:flex; align-items:center; gap:10px; flex:1;">
              <div style="background: linear-gradient(135deg, #2563EB, #60A5FA); width:28px; height:28px; border-radius:8px; display:flex; justify-content:center; align-items:center; box-shadow: 0 2px 4px rgba(37,99,235,0.3);">
@@ -792,28 +792,14 @@
         if (proxFeriado) textoConversa += `<br><br>🎉 <b>Lembrete:</b> Próximo descanso será dia <b>${proxFeriado.dataStr}</b> (${proxFeriado.nome}).`;
 
         let diasFolga = [];
-        let diasAtestado = []; // Criamos a lista para os atestados
-
         historicoGlobal.forEach(r => {
-            // Verifica Folgas e Abonadas
             if (r.tipo === 'Folga' || (r.hora && (r.hora.toUpperCase().includes('FOLGA') || r.hora.toUpperCase().includes('ABONADA')))) {
                 if (!diasFolga.includes(r.data)) diasFolga.push(r.data);
             }
-            // Verifica Atestados
-            if (r.hora && r.hora.toUpperCase().includes('ATESTADO')) {
-                if (!diasAtestado.includes(r.data)) diasAtestado.push(r.data);
-            }
         });
-
         if (diasFolga.length > 0) {
             let diasFormatados = diasFolga.map(d => d.substring(0, 5)); 
             textoConversa += `<br><br>🌴 <b>Folgas/Abonadas identificadas:</b> ${diasFormatados.join(', ')}.`;
-        }
-
-        // Se encontrou atestados, a inteligência avisa
-        if (diasAtestado.length > 0) {
-            let atestadosFormatados = diasAtestado.map(d => d.substring(0, 5)); 
-            textoConversa += `<br><br>🏥 <b>Atestados médicos lançados:</b> dia(s) ${atestadosFormatados.join(', ')}.`;
         }
 
         // --- PUXANDO ANIVERSÁRIO DA NUVEM (FIREBASE) ---
@@ -1585,14 +1571,6 @@
     window.excluirAnexo = excluirAnexo;
 
     setInterval(checarDespertador, 30000);
-    // --- FECHAR INTELIGÊNCIA AO ROLAR A TELA ---
-    window.addEventListener('scroll', function() {
-        const boxInteligencia = document.getElementById('box-inteligencia');
-        // Se a tela for rolada mais de 80 pixels para baixo, e a caixa estiver aberta, ele fecha
-        if (window.scrollY > 80 && boxInteligencia && boxInteligencia.hasAttribute('open')) {
-            boxInteligencia.removeAttribute('open');
-        }
-    });
   </script>
 </body>
 </html>
