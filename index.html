@@ -14,7 +14,7 @@
   
   <!-- SCRIPT DO OCR (Tesseract.js) -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root { 
@@ -53,15 +53,7 @@
     .login-box h2 { margin: 10px 0 24px; font-weight: 800; color: var(--text-main); font-size: 24px; }
     
     /* CABEÇALHO COMPACTO */
-   .header { 
-      background: rgba(255, 255, 255, 0.75);
-      backdrop-filter: saturate(180%) blur(16px);
-      -webkit-backdrop-filter: saturate(180%) blur(16px);
-      padding: 12px 16px; 
-      border-bottom: 1px solid rgba(229, 231, 235, 0.5); 
-      position: sticky; top: 0; z-index: 50; 
-      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-    }
+    .header { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); padding: 12px 16px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
     .header h1 { margin: 0; font-size: 16px; font-weight: 800; letter-spacing: -0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
     .avatar-icon { width: 34px; height: 34px; background: linear-gradient(135deg, var(--primary), #60A5FA); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 13px; letter-spacing: 1px; box-shadow: var(--shadow-sm); flex-shrink: 0; }
     .status-badge { font-size:11px; font-weight:700; padding:6px 10px; border-radius:999px; display:flex; align-items:center; gap:5px; box-shadow: var(--shadow-sm); transition: 0.3s; cursor: pointer; }
@@ -69,15 +61,7 @@
 
     /* LAYOUT & CARDS */
     .container { padding: 16px; max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
-    .card { 
-      background: var(--card); border-radius: 20px; padding: 24px; 
-      box-shadow: var(--shadow-md); border: 1px solid rgba(255,255,255,0.8); 
-      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
-    }
-    .card:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-lg);
-    }
+    .card { background: var(--card); border-radius: 20px; padding: 24px; box-shadow: var(--shadow-md); border: 1px solid rgba(255,255,255,0.5); }
     .card-title { font-size: 12px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
     
     /* ACORDEÃO (DETAILS/SUMMARY) */
@@ -89,16 +73,8 @@
 
     /* INPUTS & BOTÕES */
     label { font-size: 13px; font-weight: 600; margin-bottom: 8px; display: block; color: var(--text-main); }
-    input, select { 
-      width: 100%; background: #F8FAFC; border: 1px solid var(--border); 
-      border-radius: 14px; padding: 14px 16px; font-size: 15px; margin-bottom: 16px; 
-      outline: none; transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; 
-      color: var(--text-main); font-weight: 500;
-    }
-    input:focus, select:focus { 
-      border-color: var(--primary); background: #FFFFFF; 
-      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1), inset 0 2px 4px rgba(0,0,0,0.02); 
-    }
+    input, select { width: 100%; background: #F9FAFB; border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; font-size: 15px; margin-bottom: 16px; outline: none; transition: all 0.2s; color: var(--text-main); }
+    input:focus, select:focus { border-color: var(--primary); background: #EFF6FF; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
     
     .btn { width: 100%; background: var(--primary); color: white; font-size: 15px; font-weight: 700; border: none; border-radius: 14px; padding: 16px; cursor: pointer; transition: all 0.2s; display:flex; justify-content:center; align-items:center; gap:8px; box-shadow: 0 4px 6px rgba(37,99,235,0.2); }
     .btn:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 6px 8px rgba(37,99,235,0.3); }
@@ -339,8 +315,8 @@
     </div>
   </div>
 
-  <!-- Botão Flutuante Discreto (Rodapé) -->
- <div id="btnSalvarNuvem" class="btn-flutuante no-print" style="display:none; pointer-events:none;" title="Status de Salvamento">
+  <!-- Botão Flutuante Discreto (Rodapé) - Agora sem pointer-events para o auto-save -->
+  <div id="btnSalvarNuvem" class="btn-flutuante no-print" style="display:none; pointer-events:none;" title="Status de Salvamento">
   </div>
 
   <div id="modalPonto" class="modal-overlay">
@@ -944,12 +920,9 @@
         let obsBox = document.querySelector('.obs-edit');
         if(obsBox) { edicoes["_obs"] = obsBox.innerText; }
 
-      localStorage.setItem('folhaManual_' + currentUser.loginID + '_' + valMes, JSON.stringify(edicoes));
-        
-        if(!silencioso) {
-             atualizarPainelFrontEnd(); 
-             abrirModal("Sincronizado", "Edições salvas na tela localmente!", "sucesso");
-        }
+        localStorage.setItem('folhaManual_' + currentUser.loginID + '_' + valMes, JSON.stringify(edicoes));
+        atualizarPainelFrontEnd(); 
+        if(!silencioso) abrirModal("Sincronizado", "Edições salvas na tela localmente!", "sucesso");
     }
 
     function calcularLinhaA4(celulaEditada, requiresSave = true) {
@@ -974,7 +947,7 @@
         } else { tdTotal.innerText = ""; tdTotal.removeAttribute('data-minutos'); tdSaldo.innerText = ""; tdSaldo.removeAttribute('data-saldo'); }
 
         if (tdAss) tdAss.innerHTML = (e !== null && s !== null && currentUser.user.assinatura) ? `<img src="${currentUser.user.assinatura}" style="max-height: 20px; vertical-align: middle;">` : "";
-       calcularTotalFolhaA4(); if(requiresSave) dispararAutoSave();
+        calcularTotalFolhaA4(); if(requiresSave) dispararAutoSave(); // CORREÇÃO: Chama o dispararAutoSave ao invés do salvar local
     }
 
     function calcularTotalFolhaA4() {
@@ -1063,7 +1036,7 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
             Observações e Atestados
           </div>
-         <div class="obs-edit" contenteditable="plaintext-only" oninput="dispararAutoSave()">${obsSalvas}</div>
+          <div class="obs-edit" contenteditable="plaintext-only" oninput="dispararAutoSave()">${obsSalvas}</div> <!-- CORREÇÃO AQUI TAMBÉM -->
         </div>
 
         <div style="margin-top: 40px; text-align: center;">
@@ -1092,7 +1065,7 @@
         const file = event.target.files[0];
         if (!file) return;
 
-        event.target.value = ""; // Reset input
+        event.target.value = ""; 
         mostrarLoader("LENDO FOTO... (A IA PODE DEMORAR ALGUNS SEGUNDOS)");
 
         try {
@@ -1101,10 +1074,8 @@
             await worker.terminate();
 
             let textoOCR = data.text;
-            // Basic cleanup for common OCR mistakes with numbers
             textoOCR = textoOCR.replace(/[oO]/g, '0').replace(/[iIlL]/g, '1').replace(/[sS]/g, '5').replace(/[zZ]/g, '2');
 
-            // Regex for times: 08:00, 08h00, 08.00, or even 0800
             const regexHoras = /\b([0-1]?[0-9]|2[0-3])[:hH\.]?([0-5][0-9])\b/g;
             let match;
             let horariosExtraidos = [];
@@ -1118,11 +1089,11 @@
             ocultarLoader();
 
             if (horariosExtraidos.length === 0) {
-                abrirModal("Erro na Leitura", "A IA não encontrou nenhum horário legível. Tente uma foto com melhor iluminação e mais próxima do papel.", "erro");
+                abrirModal("Erro na Leitura", "A IA não encontrou nenhum horário legível na imagem. Tente tirar a foto com melhor iluminação ou mais perto.", "erro");
                 return;
             }
 
-            if (confirm(`A IA encontrou ${horariosExtraidos.length} horários legíveis.\n\nDeseja preencher automaticamente as células VAZIAS do espelho atual?`)) {
+            if (confirm(`A IA encontrou ${horariosExtraidos.length} horários legíveis.\n\nDeseja que o sistema preencha automaticamente as células VAZIAS do espelho atual com esses horários?`)) {
                 preencherEspelhoComOCR(horariosExtraidos);
             }
 
@@ -1142,10 +1113,8 @@
         for (let td of celulasEditaveis) {
             if (indiceHorario >= horarios.length) break;
 
-            // Only fill if empty
             if (td.innerText.trim() === '') {
                 td.innerText = horarios[indiceHorario];
-                // Trigger calculation and save
                 calcularLinhaA4(td, false);
                 indiceHorario++;
                 alteracoesFeitas++;
@@ -1153,10 +1122,10 @@
         }
 
         if (alteracoesFeitas > 0) {
-            dispararAutoSave();
-            abrirModal("Sucesso OCR", `${alteracoesFeitas} horários foram preenchidos. Por favor, confira os números digitados pela IA antes de salvar ou imprimir.`, "sucesso");
+            dispararAutoSave(); // Salva na nuvem silenciosamente tudo o que a IA injetou
+            abrirModal("Sucesso OCR", `${alteracoesFeitas} horários foram preenchidos. Por favor, confira os números digitados pela IA antes de imprimir.`, "sucesso");
         } else {
-            abrirModal("Aviso", "A IA leu os horários, mas não havia células vazias na tela para preencher.", "erro");
+            abrirModal("Aviso", "A IA leu os horários, mas não havia células vazias na tabela para preencher.", "erro");
         }
     }
   
@@ -1285,9 +1254,7 @@
 
         if (diaSemana === 0 || diaSemana === 6) return;
 
-        // Correção de fallback no match
         const isHorarioTarde = (currentUser.loginID || "").match(/karina|alane/);
-
         let mensagens = {};
 
         if (isHorarioTarde) {
@@ -1317,7 +1284,6 @@
     function enviarNotificacaoReal(titulo, corpo) {
         if (Notification.permission === "granted") {
             try {
-                // Correção de proteção ServiceWorker
                 if ("serviceWorker" in navigator) {
                     navigator.serviceWorker.getRegistration().then(function(reg) {
                         if (reg) {
