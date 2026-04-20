@@ -120,6 +120,28 @@
     .typing-cursor { border-right: 2px solid var(--primary); animation: blinkCursor 0.7s infinite; padding-right: 4px; }
     @keyframes blinkCursor { from { border-right-color: var(--primary); } to { border-right-color: transparent; } }
 
+    /* CARDS DO BALANÇO (ESTILO 3D/PREMIUM) */
+    .balanco-card {
+        background: linear-gradient(145deg, #ffffff, #f8fafc);
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 12px 16px;
+        margin-top: 10px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .balanco-card:hover {
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+    }
+    .balanco-col { display: flex; flex-direction: column; }
+    .balanco-label { font-size: 9px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .balanco-val { font-size: 15px; font-weight: 700; color: #0F172A; font-family: monospace; }
+    .badge-saldo { font-size: 13px; font-weight: 800; padding: 4px 8px; border-radius: 8px; font-family: monospace; }
+
     /* ESPELHO A4 MELHORADO */
     .folha-container { background: #fff; border-radius: 16px; box-shadow: var(--shadow-sm); padding: 20px; border: 1px solid var(--border); width: 100%; overflow: hidden; }
     .doc-header { display: flex; align-items: center; gap: 15px; border-bottom: 2px solid #1E293B; padding-bottom: 12px; margin-bottom: 15px; }
@@ -843,12 +865,43 @@
         let chaves = Object.keys(mesesMap).sort((a,b) => (a.split('/')[1] + a.split('/')[0]).localeCompare(b.split('/')[1] + b.split('/')[0]));
         if(chaves.length === 0) return "";
         
-        let htmlStr = `<br><br><b style="color:var(--primary); font-size:12px; text-transform:uppercase;">📊 Balanço Geral de Horas:</b><br>`;
+        // NOVO VISUAL AQUI
+        let htmlStr = `
+        <div style="margin-top:24px; border-top: 1px dashed #E5E7EB; padding-top: 16px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom: 8px;">
+                <div style="background:#EFF6FF; padding:6px; border-radius:8px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                </div>
+                <b style="color:#1E293B; font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">Balanço Geral de Horas</b>
+            </div>`;
+
         chaves.forEach(k => {
             let sld = mesesMap[k].saldo;
-            let corSld = sld > 0 ? "var(--success)" : (sld < 0 ? "var(--danger)" : "var(--text-main)");
-            htmlStr += `<span style="display:inline-block; margin-top:4px;">• <b>Ref ${k}:</b> Trab <b>${formataHorasMinutos(mesesMap[k].trab)}</b> | Saldo <b style="color:${corSld}">${sld > 0 ? "+" : (sld < 0 ? "-" : "")}${formataHorasMinutos(sld)}</b></span><br>`;
+            // Define as cores dinamicamente dependendo do saldo
+            let corSldTexto = sld > 0 ? "#047857" : (sld < 0 ? "#B91C1C" : "#334155");
+            let corSldFundo = sld > 0 ? "#D1FAE5" : (sld < 0 ? "#FEE2E2" : "#F1F5F9");
+            let sinal = sld > 0 ? "+" : (sld < 0 ? "-" : "");
+
+            htmlStr += `
+            <div class="balanco-card">
+                <div class="balanco-col" style="align-items: flex-start;">
+                    <span class="balanco-label">Referência</span>
+                    <span class="balanco-val" style="font-family: 'Inter', sans-serif;">${k}</span>
+                </div>
+                <div class="balanco-col" style="align-items: center;">
+                    <span class="balanco-label">Trabalhado</span>
+                    <span class="balanco-val">${formataHorasMinutos(mesesMap[k].trab)}</span>
+                </div>
+                <div class="balanco-col" style="align-items: flex-end;">
+                    <span class="balanco-label">Saldo</span>
+                    <span class="badge-saldo" style="color: ${corSldTexto}; background: ${corSldFundo}; border: 1px solid ${corSldTexto}40;">
+                        ${sinal}${formataHorasMinutos(sld)}
+                    </span>
+                </div>
+            </div>`;
         });
+        
+        htmlStr += `</div>`;
         return htmlStr;
     }
 
@@ -1113,27 +1166,72 @@
     }
 
     function preencherEspelhoComOCR(horarios) {
-        let indiceHorario = 0;
-        let alteracoesFeitas = 0;
+        // 1. Converte todos os horários lidos para minutos para facilitar a matemática
+        let horariosEmMinutos = horarios.map(h => {
+            return { texto: h, minutos: getMinutos(h) };
+        }).filter(h => h.minutos !== null); // Remove sujeiras
 
-        const celulasEditaveis = document.querySelectorAll('#folha-a4-render .td-edit');
+        // 2. Agrupa os horários em "Dias" (Blocos de até 4 batidas lógicas e cronológicas)
+        let diasAgrupados = [];
+        let diaAtual = [];
 
-        for (let td of celulasEditaveis) {
-            if (indiceHorario >= horarios.length) break;
-
-            if (td.innerText.trim() === '') {
-                td.innerText = horarios[indiceHorario];
-                calcularLinhaA4(td, false);
-                indiceHorario++;
-                alteracoesFeitas++;
+        for (let i = 0; i < horariosEmMinutos.length; i++) {
+            let batida = horariosEmMinutos[i];
+            
+            // Se o dia atual está vazio, adiciona a primeira batida
+            if (diaAtual.length === 0) {
+                diaAtual.push(batida);
+            } else {
+                // Só adiciona a próxima batida se for MAIOR cronologicamente que a anterior
+                let ultimaBatida = diaAtual[diaAtual.length - 1];
+                if (batida.minutos > ultimaBatida.minutos && diaAtual.length < 4) {
+                    diaAtual.push(batida);
+                } else {
+                    // Se o horário for menor (ex: 17:00 seguido de 08:00), significa que virou o dia!
+                    // Ou se já tem 4 batidas, fecha o pacote e abre um novo dia.
+                    diasAgrupados.push(diaAtual);
+                    diaAtual = [batida];
+                }
             }
         }
+        if (diaAtual.length > 0) diasAgrupados.push(diaAtual);
 
+        // 3. Injeta no Espelho A4 Linha por Linha
+        let alteracoesFeitas = 0;
+        let linhasTabela = document.querySelectorAll('#folha-a4-render tr:not(.tr-ds):not(.tr-folga)');
+        let indexDiaExtraido = 0;
+
+        linhasTabela.forEach(tr => {
+            // Ignora a linha do cabeçalho
+            if (tr.querySelector('th')) return;
+
+            let tdsEditaveis = tr.querySelectorAll('.td-edit');
+            if (tdsEditaveis.length !== 4) return; // Tem que ter as 4 colunas
+
+            // Verifica se a linha atual está completamente vazia
+            let linhaVazia = Array.from(tdsEditaveis).every(td => td.innerText.trim() === '');
+
+            if (linhaVazia && indexDiaExtraido < diasAgrupados.length) {
+                let pacoteDoDia = diasAgrupados[indexDiaExtraido];
+                
+                // Injeta os horários do pacote nas respectivas colunas
+                for (let j = 0; j < pacoteDoDia.length; j++) {
+                    tdsEditaveis[j].innerText = pacoteDoDia[j].texto;
+                    alteracoesFeitas++;
+                }
+                
+                // Dispara o cálculo para atualizar os totais dessa linha
+                calcularLinhaA4(tdsEditaveis[0], false); 
+                indexDiaExtraido++;
+            }
+        });
+
+        // 4. Feedback e Salvamento
         if (alteracoesFeitas > 0) {
-            dispararAutoSave(); // Salva na nuvem silenciosamente tudo o que a IA injetou
-            abrirModal("Sucesso OCR", `${alteracoesFeitas} horários foram preenchidos. Por favor, confira os números digitados pela IA antes de imprimir.`, "sucesso");
+            dispararAutoSave(); // Salva tudo na nuvem com a animação
+            abrirModal("Sucesso OCR", `${alteracoesFeitas} horários foram distribuídos inteligentemente. <b>Sempre confira os números antes de imprimir!</b>`, "sucesso");
         } else {
-            abrirModal("Aviso", "A IA leu os horários, mas não havia células vazias na tabela para preencher.", "erro");
+            abrirModal("Aviso", "A IA leu os horários, mas ou não encontrou linhas vazias suficientes, ou os dados estavam muito confusos para agrupar cronologicamente.", "erro");
         }
     }
   
