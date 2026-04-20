@@ -799,7 +799,7 @@
         calcularLinhaA4(celula, true);
     }
 
-    function animarDigitacao(elemento, htmlCompleto, velocidade = 10) {
+   function animarDigitacao(elemento, htmlCompleto, velocidade = 10, onComplete = null) {
         elemento.innerHTML = ""; elemento.classList.add('typing-cursor');
         let i = 0; let isTag = false; let text = "";
         function digitaLetra() {
@@ -808,7 +808,10 @@
                 if (char === '<') isTag = true; if (char === '>') isTag = false;
                 elemento.innerHTML = text; i++;
                 if (isTag) digitaLetra(); else setTimeout(digitaLetra, velocidade);
-            } else { elemento.classList.remove('typing-cursor'); }
+            } else { 
+                elemento.classList.remove('typing-cursor'); 
+                if (onComplete) onComplete(); // Avisa que terminou de digitar!
+            }
         }
         digitaLetra();
     }
@@ -940,14 +943,19 @@
             if (sai !== '--:--') textoConversa += `Ponto encerrado às <b>${sai}</b>.`;
         }
 
-        if (climaAtual) textoConversa += `<br><br>${climaAtual.weathercode <= 3 ? "☀️" : "☁️"} <b>Clima Local:</b> ${Math.round(climaAtual.temperature)}°C.`;
+       if (climaAtual) textoConversa += `<br><br>${climaAtual.weathercode <= 3 ? "☀️" : "☁️"} <b>Clima Local:</b> ${Math.round(climaAtual.temperature)}°C.`;
         
         let proxFeriado = getProximoFeriado();
         if (proxFeriado) textoConversa += `<br><br>🎉 <b>Lembrete:</b> Próximo descanso será dia <b>${proxFeriado.dataStr}</b> (${proxFeriado.nome}).`;
 
-        textoConversa += gerarResumoTodosMeses();
-        animarDigitacao(document.getElementById('msg-conversa'), textoConversa, 8);
-        verificarPermissaoNotificacao();
+        // Guarda os cards visuais separados do texto
+        let htmlCards = gerarResumoTodosMeses();
+
+        // Digita o texto e, só quando terminar, injeta os cards de uma vez
+        animarDigitacao(document.getElementById('msg-conversa'), textoConversa, 8, () => {
+            document.getElementById('msg-conversa').innerHTML += htmlCards;
+            verificarPermissaoNotificacao();
+        });
     }
 
    function salvarFolhaA4(silencioso = false) {
