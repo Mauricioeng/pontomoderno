@@ -10,7 +10,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Bras%C3%A3o_de_Caieiras.svg/192px-Bras%C3%A3o_de_Caieiras.svg.png">
 
-  <title>UBS Laranjeiras - Ponto Único</title>
+  <title>Controle de jornada inteligente</title>
+  
+  <!-- SCRIPT DO OCR (Tesseract.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root { 
@@ -93,6 +97,13 @@
     }
     .btn-flutuante:hover, .btn-flutuante:active { opacity: 1; transform: scale(1.05); }
 
+    /* ANIMAÇÃO DO CHECK DE AUTOSAVE PREMIUM */
+    .svg-success { width: 28px; height: 28px; display: block; }
+    .svg-success circle { stroke-dasharray: 166; stroke-dashoffset: 166; stroke-width: 3; stroke-miterlimit: 10; stroke: white; fill: none; animation: strokeCircle 0.4s cubic-bezier(0.65, 0, 0.45, 1) forwards; }
+    .svg-success path { stroke-dasharray: 48; stroke-dashoffset: 48; stroke: white; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; fill: none; animation: strokeCheck 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.4s forwards; }
+    @keyframes strokeCircle { 100% { stroke-dashoffset: 0; } }
+    @keyframes strokeCheck { 100% { stroke-dashoffset: 0; } }
+
     /* MODAIS */
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center; padding: 20px; animation: fadeIn 0.2s; }
     .modal-box { background: var(--card); width: 100%; max-width: 360px; border-radius: 24px; text-align: center; box-shadow: var(--shadow-lg); animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); overflow: hidden; padding-top: 20px; }
@@ -108,6 +119,28 @@
     @keyframes textFadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     .typing-cursor { border-right: 2px solid var(--primary); animation: blinkCursor 0.7s infinite; padding-right: 4px; }
     @keyframes blinkCursor { from { border-right-color: var(--primary); } to { border-right-color: transparent; } }
+
+    /* CARDS DO BALANÇO (ESTILO 3D/PREMIUM) */
+    .balanco-card {
+        background: linear-gradient(145deg, #ffffff, #f8fafc);
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 12px 16px;
+        margin-top: 10px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .balanco-card:hover {
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+    }
+    .balanco-col { display: flex; flex-direction: column; }
+    .balanco-label { font-size: 9px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .balanco-val { font-size: 15px; font-weight: 700; color: #0F172A; font-family: monospace; }
+    .badge-saldo { font-size: 13px; font-weight: 800; padding: 4px 8px; border-radius: 8px; font-family: monospace; }
 
     /* ESPELHO A4 MELHORADO */
     .folha-container { background: #fff; border-radius: 16px; box-shadow: var(--shadow-sm); padding: 20px; border: 1px solid var(--border); width: 100%; overflow: hidden; }
@@ -198,7 +231,7 @@
            <animateTransform attributeName="transform" type="rotate" from="0 19 11" to="360 19 11" dur="4s" repeatCount="indefinite" />
         </polyline>
       </svg>
-      <h2>Ponto Laranjeiras</h2>
+      <h2>Controle de jornada inteligente</h2>
       <input type="text" id="lUser" placeholder="Usuário do Servidor" style="text-transform: lowercase;">
       <input type="password" id="lPass" placeholder="Senha de Acesso">
       <button class="btn" id="btnLogin" onclick="fazerLogin()">Acessar Painel</button>
@@ -275,8 +308,15 @@
         
         <div style="display:flex; flex-direction:column; gap:10px;">
           <label>Mês de Fechamento (Dia 11 a 10)</label>
-          <input type="month" id="tradMesData" value="2026-04" onchange="gerarFolhaTradicional()">
+          <input type="month" id="tradMesData" onchange="gerarFolhaTradicional()">
           
+          <!-- BOTÃO DE OCR INJETADO AQUI -->
+          <input type="file" id="ocrInput" accept="image/*" capture="environment" style="display:none;" onchange="processarImagemOCR(event)">
+          <button class="btn no-print" style="background: #3B82F6; padding: 12px; margin-bottom: 5px; color:white; font-weight:700; width:100%; box-shadow: 0 4px 6px rgba(59,130,246,0.2);" onclick="document.getElementById('ocrInput').click()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+            Ler Folha Física (Foto Inteligente)
+          </button>
+
           <div style="display:flex; gap:12px; align-items: center; background: #F0FDF4; padding: 12px; border-radius: 12px; border: 1px solid #BBF7D0;">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             <span style="flex:1; font-size:13px; color:#166534; font-weight:700;">Atualizado na Tela</span>
@@ -297,10 +337,9 @@
     </div>
   </div>
 
-  <!-- Botão Flutuante Discreto (Rodapé) -->
-  <button id="btnSalvarNuvem" class="btn-flutuante no-print" style="display:none;" onclick="sincronizarComNuvem()" title="Salvar na Nuvem">
-     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-  </button>
+  <!-- Botão Flutuante Discreto (Rodapé) - Agora sem pointer-events para o auto-save -->
+  <div id="btnSalvarNuvem" class="btn-flutuante no-print" style="display:none; pointer-events:none;" title="Status de Salvamento">
+  </div>
 
   <div id="modalPonto" class="modal-overlay">
     <div class="modal-box" style="padding: 24px;">
@@ -375,7 +414,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-    // CHAVES DO FIREBASE (Só para o Banco de Dados agora)
     const firebaseConfig = {
       apiKey: "AIzaSyDrcb9hOtTIcDwb96WxfQ_Nu8hCoOH6-o8",
       authDomain: "corepontomoderno.firebaseapp.com",
@@ -389,7 +427,6 @@
     const app = initializeApp(firebaseConfig);
     const database = getDatabase(app);
 
-    // LINK DO SEU GOOGLE APPS SCRIPT (Que agora é só o Guarda-costas do Login)
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz2C7CMDee5LlUPCkYzTcEMjuWd-DzztpLIvQyi7h02nfI_2lmRr2gZcMCiDpzDelrP/exec"; 
 
   const FERIADOS_2026 = [
@@ -425,7 +462,21 @@
     let feriadosGlobal = FERIADOS_2026;
     let climaAtual = null;
 
-    window.onload = () => {
+   window.onload = () => {
+        const hoje = new Date();
+        let anoFechamento = hoje.getFullYear();
+        let mesFechamento = hoje.getMonth() + 1; 
+        
+        if (hoje.getDate() > 10) {
+            mesFechamento++;
+            if (mesFechamento > 12) {
+                mesFechamento = 1;
+                anoFechamento++;
+            }
+        }
+        
+        document.getElementById('tradMesData').value = `${anoFechamento}-${String(mesFechamento).padStart(2, '0')}`;
+
         setTimeout(() => {
             document.getElementById('global-loader').style.opacity = '0';
             setTimeout(() => {
@@ -455,7 +506,6 @@
       document.getElementById('customModal').style.display = 'flex';
     }
 
-    // --- LOGIN HÍBRIDO: HTML -> GOOGLE APPS SCRIPT ---
     function fazerLogin() {
       const login = document.getElementById('lUser').value.trim().toLowerCase(); 
       const senha = document.getElementById('lPass').value.trim();
@@ -465,7 +515,6 @@
       err.style.display = 'none';
       mostrarLoader("AUTENTICANDO...");
       
-      // Envia a senha para o Google Apps Script verificar em segredo
       fetch(WEB_APP_URL, { 
         method: "POST", 
         headers: { "Content-Type": "text/plain;charset=utf-8" }, 
@@ -484,7 +533,6 @@
           let iniciais = nomes[0].charAt(0).toUpperCase() + (nomes.length > 1 ? nomes[nomes.length-1].charAt(0).toUpperCase() : '');
           document.getElementById('userAvatar').innerText = iniciais;
           document.getElementById('userName').innerText = nomes[0] + (nomes.length > 1 ? ' ' + nomes[nomes.length-1] : ''); 
-          document.getElementById('btnSalvarNuvem').style.display = 'flex'; 
           
           carregarHistorico(); 
           iniciarGps(); 
@@ -500,7 +548,6 @@
       });
     }
 
-    // --- DAQUI PRA BAIXO, TUDO É FIREBASE ---
     function carregarHistorico() {
       mostrarLoader("CARREGANDO HISTÓRICO...");
       get(ref(database, `historico/${currentUser.loginID}`)).then((snapshot) => {
@@ -519,7 +566,6 @@
       });
     }
 
-    // --- SALVAR LOTE FIREBASE (Manual) ---
     async function salvarHorariosLote() {
         const dataIso = document.getElementById('inpDataRegistro').value;
         if (!dataIso) return abrirModal("Aviso", "Selecione uma data válida.", "erro");
@@ -568,8 +614,6 @@
 
         try {
             await Promise.all(promises);
-            
-            // CORREÇÃO: Limpa o rascunho fantasma do celular para forçar a leitura do Firebase
             const valMes = document.getElementById('tradMesData').value;
             localStorage.removeItem('folhaManual_' + currentUser.loginID + '_' + valMes);
             
@@ -582,12 +626,11 @@
         }
     }
 
-    // --- SINCRONIZAR A4 NO FIREBASE ---
     async function sincronizarComNuvem() {
         const valMes = document.getElementById('tradMesData').value;
         if(!valMes || !currentUser) return;
         
-        let edicoesSalvas = JSON.parse(localStorage.getItem('folhaManual_' + currentUser.loginID + '_' + valMes)) || {};
+        let edicoesSalvas = JSON.parse(localStorage.getItem('folhaManual_' + currentUser.loginID + '_' + valMes) || "{}");
         let partesMes = valMes.split('-'); 
         let ano = parseInt(partesMes[0]); 
         let mesInt = parseInt(partesMes[1]);
@@ -597,7 +640,7 @@
         let promises = [];
 
         for(let diaStr in edicoesSalvas) {
-            if(diaStr === '_obs') continue; // Pula a observação aqui para processar só os dias
+            if(diaStr === '_obs') continue; 
             
             let objDoDia = edicoesSalvas[diaStr];
             let diaNum = parseInt(diaStr);
@@ -619,43 +662,46 @@
                 
                 if (valorEditado !== undefined) {
                     let chaveFirebase = `${dd}_${mm}_${anoDoDia}_${item.tipo}`;
+                    let registroAntigo = historicoGlobal.find(h => h.data === dataFormatada && h.tipo === item.tipo);
                     
                     if (valorEditado === "") {
-                        promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebase}`), null));
+                        if (registroAntigo) {
+                            promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebase}`), null));
+                        }
                     } else {
-                        let payload = {
-                            usuario: currentUser.user.nome,
-                            data: dataFormatada,
-                            hora: valorEditado,
-                            tipo: item.tipo,
-                            noLocal: geo.ok,
-                            dataHoraDispositivo: dataHoraDispositivo,
-                            obs: geo.ok ? `Sincronizado Espelho em ${dataHoraDispositivo} (Local)` : `Sincronizado Espelho em ${dataHoraDispositivo} (Fora)`
-                        };
-                        promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebase}`), payload));
+                        if (!registroAntigo || registroAntigo.hora !== valorEditado) {
+                            let payload = {
+                                usuario: currentUser.user.nome,
+                                data: dataFormatada,
+                                hora: valorEditado,
+                                tipo: item.tipo,
+                                noLocal: geo.ok,
+                                dataHoraDispositivo: dataHoraDispositivo,
+                                obs: geo.ok ? `Sincronizado Espelho em ${dataHoraDispositivo} (Local)` : `Sincronizado Espelho em ${dataHoraDispositivo} (Fora)`
+                            };
+                            promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebase}`), payload));
+                        }
                     }
                 }
             }
         }
 
-        // NOVIDADE: Salva as observações do mês inteiro em um registro especial no Firebase
         if (edicoesSalvas['_obs'] !== undefined) {
-            let chaveFirebaseObs = `OBS_MENSAL_${valMes}`;
-            let payloadObs = {
-                tipo: 'ObservacaoMensal',
-                mesAno: valMes,
-                texto: edicoesSalvas['_obs']
-            };
-            promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebaseObs}`), payloadObs));
+            let obsAntiga = historicoGlobal.find(h => h.tipo === 'ObservacaoMensal' && h.mesAno === valMes)?.texto || "";
+            if (edicoesSalvas['_obs'] !== obsAntiga) {
+                let chaveFirebaseObs = `OBS_MENSAL_${valMes}`;
+                let payloadObs = { tipo: 'ObservacaoMensal', mesAno: valMes, texto: edicoesSalvas['_obs'] };
+                promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebaseObs}`), payloadObs));
+            }
         }
 
         try {
-            if(promises.length > 0) await Promise.all(promises);
-            
+            if(promises.length > 0) {
+                await Promise.all(promises);
+            }
             localStorage.removeItem('folhaManual_' + currentUser.loginID + '_' + valMes);
-            
             ocultarLoader();
-            abrirModal("Nuvem Atualizada", "Banco de dados sincronizado em tempo real!", "sucesso");
+            abrirModal("Nuvem Atualizada", "Banco de dados sincronizado com sucesso!", "sucesso");
             carregarHistorico();
         } catch (error) {
             ocultarLoader();
@@ -663,16 +709,20 @@
         }
     }
 
-    // --- FUNÇÕES GEOLOCALIZAÇÃO E UTILITÁRIOS (MANTIDAS EXATAMENTE IGUAIS) ---
     let climaBuscado = false;
     function iniciarGps() {
       if (!navigator.geolocation) { return; }
       navigator.geolocation.watchPosition(pos => {
         geo.lat = pos.coords.latitude; geo.lon = pos.coords.longitude;
-        const R = 6371e3; const dLat = (currentUser.ubsGeo.lat - geo.lat) * Math.PI/180; const dLon = (currentUser.ubsGeo.lon - geo.lon) * Math.PI/180;
-        const a = Math.sin(dLat/2)**2 + Math.cos(geo.lat*Math.PI/180)*Math.cos(currentUser.ubsGeo.lat*Math.PI/180)*Math.sin(dLon/2)**2;
-        geo.ok = (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))) <= 250;
         
+        if (!currentUser || !currentUser.ubsGeo) { 
+            geo.ok = true; 
+        } else {
+            const R = 6371e3; const dLat = (currentUser.ubsGeo.lat - geo.lat) * Math.PI/180; const dLon = (currentUser.ubsGeo.lon - geo.lon) * Math.PI/180;
+            const a = Math.sin(dLat/2)**2 + Math.cos(geo.lat*Math.PI/180)*Math.cos(currentUser.ubsGeo.lat*Math.PI/180)*Math.sin(dLon/2)**2;
+            geo.ok = (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))) <= 250;
+        }
+
         const gs = document.getElementById('statusGps');
         if(geo.ok) {
             gs.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"></circle></svg> Local`;
@@ -749,7 +799,7 @@
         calcularLinhaA4(celula, true);
     }
 
-    function animarDigitacao(elemento, htmlCompleto, velocidade = 10) {
+   function animarDigitacao(elemento, htmlCompleto, velocidade = 10, onComplete = null) {
         elemento.innerHTML = ""; elemento.classList.add('typing-cursor');
         let i = 0; let isTag = false; let text = "";
         function digitaLetra() {
@@ -758,7 +808,10 @@
                 if (char === '<') isTag = true; if (char === '>') isTag = false;
                 elemento.innerHTML = text; i++;
                 if (isTag) digitaLetra(); else setTimeout(digitaLetra, velocidade);
-            } else { elemento.classList.remove('typing-cursor'); }
+            } else { 
+                elemento.classList.remove('typing-cursor'); 
+                if (onComplete) onComplete(); // Avisa que terminou de digitar!
+            }
         }
         digitaLetra();
     }
@@ -783,7 +836,6 @@
         if (!historicoGlobal || historicoGlobal.length === 0) return "";
         let diasMap = {};
         historicoGlobal.forEach(r => {
-            // CORREÇÃO: Ignora itens do Firebase que não sejam datas de ponto (como as Observações)
             if (!r.data || !r.data.includes('/')) return;
 
             if(!diasMap[r.data]) diasMap[r.data] = {e:null, ia:null, ta:null, s:null};
@@ -816,12 +868,43 @@
         let chaves = Object.keys(mesesMap).sort((a,b) => (a.split('/')[1] + a.split('/')[0]).localeCompare(b.split('/')[1] + b.split('/')[0]));
         if(chaves.length === 0) return "";
         
-        let htmlStr = `<br><br><b style="color:var(--primary); font-size:12px; text-transform:uppercase;">📊 Balanço Geral de Horas:</b><br>`;
+        // NOVO VISUAL AQUI
+        let htmlStr = `
+        <div style="margin-top:24px; border-top: 1px dashed #E5E7EB; padding-top: 16px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom: 8px;">
+                <div style="background:#EFF6FF; padding:6px; border-radius:8px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                </div>
+                <b style="color:#1E293B; font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">Balanço Geral de Horas</b>
+            </div>`;
+
         chaves.forEach(k => {
             let sld = mesesMap[k].saldo;
-            let corSld = sld > 0 ? "var(--success)" : (sld < 0 ? "var(--danger)" : "var(--text-main)");
-            htmlStr += `<span style="display:inline-block; margin-top:4px;">• <b>Ref ${k}:</b> Trab <b>${formataHorasMinutos(mesesMap[k].trab)}</b> | Saldo <b style="color:${corSld}">${sld > 0 ? "+" : (sld < 0 ? "-" : "")}${formataHorasMinutos(sld)}</b></span><br>`;
+            // Define as cores dinamicamente dependendo do saldo
+            let corSldTexto = sld > 0 ? "#047857" : (sld < 0 ? "#B91C1C" : "#334155");
+            let corSldFundo = sld > 0 ? "#D1FAE5" : (sld < 0 ? "#FEE2E2" : "#F1F5F9");
+            let sinal = sld > 0 ? "+" : (sld < 0 ? "-" : "");
+
+            htmlStr += `
+            <div class="balanco-card">
+                <div class="balanco-col" style="align-items: flex-start;">
+                    <span class="balanco-label">Referência</span>
+                    <span class="balanco-val" style="font-family: 'Inter', sans-serif;">${k}</span>
+                </div>
+                <div class="balanco-col" style="align-items: center;">
+                    <span class="balanco-label">Trabalhado</span>
+                    <span class="balanco-val">${formataHorasMinutos(mesesMap[k].trab)}</span>
+                </div>
+                <div class="balanco-col" style="align-items: flex-end;">
+                    <span class="balanco-label">Saldo</span>
+                    <span class="badge-saldo" style="color: ${corSldTexto}; background: ${corSldFundo}; border: 1px solid ${corSldTexto}40;">
+                        ${sinal}${formataHorasMinutos(sld)}
+                    </span>
+                </div>
+            </div>`;
         });
+        
+        htmlStr += `</div>`;
         return htmlStr;
     }
 
@@ -860,17 +943,22 @@
             if (sai !== '--:--') textoConversa += `Ponto encerrado às <b>${sai}</b>.`;
         }
 
-        if (climaAtual) textoConversa += `<br><br>${climaAtual.weathercode <= 3 ? "☀️" : "☁️"} <b>Clima Local:</b> ${Math.round(climaAtual.temperature)}°C.`;
+       if (climaAtual) textoConversa += `<br><br>${climaAtual.weathercode <= 3 ? "☀️" : "☁️"} <b>Clima Local:</b> ${Math.round(climaAtual.temperature)}°C.`;
         
         let proxFeriado = getProximoFeriado();
         if (proxFeriado) textoConversa += `<br><br>🎉 <b>Lembrete:</b> Próximo descanso será dia <b>${proxFeriado.dataStr}</b> (${proxFeriado.nome}).`;
 
-        textoConversa += gerarResumoTodosMeses();
-        animarDigitacao(document.getElementById('msg-conversa'), textoConversa, 8);
-        verificarPermissaoNotificacao();
+        // Guarda os cards visuais separados do texto
+        let htmlCards = gerarResumoTodosMeses();
+
+        // Digita o texto e, só quando terminar, injeta os cards de uma vez
+        animarDigitacao(document.getElementById('msg-conversa'), textoConversa, 8, () => {
+            document.getElementById('msg-conversa').innerHTML += htmlCards;
+            verificarPermissaoNotificacao();
+        });
     }
 
-    function salvarFolhaA4(silencioso = false) {
+   function salvarFolhaA4(silencioso = false) {
         const valMes = document.getElementById('tradMesData').value; if(!valMes) return;
         let edicoes = {}; let partesMes = valMes.split('-'); let ano = parseInt(partesMes[0]); let mesInt = parseInt(partesMes[1]);
 
@@ -880,24 +968,32 @@
             let ta = tr.querySelector('[data-col="ta"]')?.innerText.trim() || ''; let s = tr.querySelector('[data-col="s"]')?.innerText.trim() || '';
             
             edicoes[dia] = {e, ia, ta, s};
-            let mesDoDia = (parseInt(dia) > 10) ? mesInt - 1 : mesInt; let anoDoDia = ano; if(mesDoDia === 0) { mesDoDia = 12; anoDoDia--; }
-            let dataFormatada = `${dia}/${String(mesDoDia).padStart(2,'0')}/${anoDoDia}`;
+            
+            // CORREÇÃO: A atualização da memória local agora fica blindada.
+            // Se for Auto-Save (silencioso), não mexemos na memória ainda, 
+            // para que a função de nuvem consiga detectar a mudança e enviar pro Firebase.
+            if (!silencioso) {
+                let mesDoDia = (parseInt(dia) > 10) ? mesInt - 1 : mesInt; let anoDoDia = ano; if(mesDoDia === 0) { mesDoDia = 12; anoDoDia--; }
+                let dataFormatada = `${dia}/${String(mesDoDia).padStart(2,'0')}/${anoDoDia}`;
 
-            historicoGlobal = historicoGlobal.filter(h => h.data !== dataFormatada);
-            if(e) historicoGlobal.push({ data: dataFormatada, hora: e, tipo: 'Entrada' });
-            if(ia) historicoGlobal.push({ data: dataFormatada, hora: ia, tipo: 'Almoço' });
-            if(ta) historicoGlobal.push({ data: dataFormatada, hora: ta, tipo: 'Retorno' });
-            if(s) historicoGlobal.push({ data: dataFormatada, hora: s, tipo: 'Saída Final' });
+                historicoGlobal = historicoGlobal.filter(h => h.data !== dataFormatada);
+                if(e) historicoGlobal.push({ data: dataFormatada, hora: e, tipo: 'Entrada' });
+                if(ia) historicoGlobal.push({ data: dataFormatada, hora: ia, tipo: 'Almoço' });
+                if(ta) historicoGlobal.push({ data: dataFormatada, hora: ta, tipo: 'Retorno' });
+                if(s) historicoGlobal.push({ data: dataFormatada, hora: s, tipo: 'Saída Final' });
+            }
         });
 
         let obsBox = document.querySelector('.obs-edit');
         if(obsBox) { edicoes["_obs"] = obsBox.innerText; }
 
         localStorage.setItem('folhaManual_' + currentUser.loginID + '_' + valMes, JSON.stringify(edicoes));
-        atualizarPainelFrontEnd(); 
-        if(!silencioso) abrirModal("Sincronizado", "Edições salvas na tela localmente!", "sucesso");
+        
+        if(!silencioso) {
+             atualizarPainelFrontEnd(); 
+             abrirModal("Sincronizado", "Edições salvas na tela localmente!", "sucesso");
+        }
     }
-
     function calcularLinhaA4(celulaEditada, requiresSave = true) {
         let tr = celulaEditada.parentElement;
         let e = getMinutos(tr.querySelector('[data-col="e"]')?.innerText.trim() || ''); 
@@ -920,7 +1016,7 @@
         } else { tdTotal.innerText = ""; tdTotal.removeAttribute('data-minutos'); tdSaldo.innerText = ""; tdSaldo.removeAttribute('data-saldo'); }
 
         if (tdAss) tdAss.innerHTML = (e !== null && s !== null && currentUser.user.assinatura) ? `<img src="${currentUser.user.assinatura}" style="max-height: 20px; vertical-align: middle;">` : "";
-        calcularTotalFolhaA4(); if(requiresSave) salvarFolhaA4(true);
+        calcularTotalFolhaA4(); if(requiresSave) dispararAutoSave(); // CORREÇÃO: Chama o dispararAutoSave ao invés do salvar local
     }
 
     function calcularTotalFolhaA4() {
@@ -940,8 +1036,8 @@
       let prevMes = mes === 1 ? 12 : mes - 1; let prevAno = mes === 1 ? ano - 1 : ano;
 
       const dataInicio = new Date(prevAno, prevMes - 1, 11); const dataFim = new Date(ano, mes - 1, 10);
-      let edicoesSalvas = JSON.parse(localStorage.getItem('folhaManual_' + currentUser.loginID + '_' + valMes)) || {};
-      let horarioOficial = currentUser.loginID.match(/karina|alane/) ? "08h - 17h" : "07h - 16h"; 
+      let edicoesSalvas = JSON.parse(localStorage.getItem('folhaManual_' + currentUser.loginID + '_' + valMes) || "{}");
+      let horarioOficial = (currentUser.loginID || "").match(/karina|alane/) ? "08h - 17h" : "07h - 16h"; 
       let tagAssinatura = currentUser.user.assinatura ? `<img src="${currentUser.user.assinatura}" style="max-height: 20px; vertical-align: middle;">` : "";
 
       let html = `<div class="folha-container">
@@ -994,7 +1090,6 @@
         curDate.setDate(curDate.getDate() + 1);
       }
 
-      // NOVIDADE: Busca a anotação salva no Firebase e exibe na tela
       let obsDoFirebase = historicoGlobal.find(h => h.tipo === 'ObservacaoMensal' && h.mesAno === valMes)?.texto || "";
       let obsSalvas = edicoesSalvas["_obs"] !== undefined ? edicoesSalvas["_obs"] : obsDoFirebase;
 
@@ -1010,7 +1105,7 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
             Observações e Atestados
           </div>
-          <div class="obs-edit" contenteditable="plaintext-only" oninput="salvarFolhaA4(true)">${obsSalvas}</div>
+          <div class="obs-edit" contenteditable="plaintext-only" oninput="dispararAutoSave()">${obsSalvas}</div> <!-- CORREÇÃO AQUI TAMBÉM -->
         </div>
 
         <div style="margin-top: 40px; text-align: center;">
@@ -1025,13 +1120,128 @@
       document.querySelectorAll('#folha-a4-render .td-edit[data-col="e"]').forEach(td => calcularLinhaA4(td, false));
     }
 
-    // Oculta a conversa ao rolar a página
     window.addEventListener('scroll', () => {
       const chatBubble = document.querySelector('.chat-bubble');
       if (window.scrollY > 50 && chatBubble && chatBubble.hasAttribute('open')) {
         chatBubble.removeAttribute('open');
       }
     });
+
+    // ==========================================
+    // SISTEMA DE OCR (LEITURA DE FOTO DA FOLHA)
+    // ==========================================
+    async function processarImagemOCR(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        event.target.value = ""; 
+        mostrarLoader("LENDO FOTO... (A IA PODE DEMORAR ALGUNS SEGUNDOS)");
+
+        try {
+            const worker = await Tesseract.createWorker('por');
+            const { data } = await worker.recognize(file);
+            await worker.terminate();
+
+            let textoOCR = data.text;
+            textoOCR = textoOCR.replace(/[oO]/g, '0').replace(/[iIlL]/g, '1').replace(/[sS]/g, '5').replace(/[zZ]/g, '2');
+
+            const regexHoras = /\b([0-1]?[0-9]|2[0-3])[:hH\.]?([0-5][0-9])\b/g;
+            let match;
+            let horariosExtraidos = [];
+
+            while ((match = regexHoras.exec(textoOCR)) !== null) {
+                let h = match[1].padStart(2, '0');
+                let m = match[2];
+                horariosExtraidos.push(`${h}:${m}`);
+            }
+
+            ocultarLoader();
+
+            if (horariosExtraidos.length === 0) {
+                abrirModal("Erro na Leitura", "A IA não encontrou nenhum horário legível na imagem. Tente tirar a foto com melhor iluminação ou mais perto.", "erro");
+                return;
+            }
+
+            if (confirm(`A IA encontrou ${horariosExtraidos.length} horários legíveis.\n\nDeseja que o sistema preencha automaticamente as células VAZIAS do espelho atual com esses horários?`)) {
+                preencherEspelhoComOCR(horariosExtraidos);
+            }
+
+        } catch (error) {
+            ocultarLoader();
+            console.error(error);
+            abrirModal("Erro", "Falha ao processar a imagem. O seu navegador pode não suportar essa função.", "erro");
+        }
+    }
+
+    function preencherEspelhoComOCR(horarios) {
+        // 1. Converte todos os horários lidos para minutos para facilitar a matemática
+        let horariosEmMinutos = horarios.map(h => {
+            return { texto: h, minutos: getMinutos(h) };
+        }).filter(h => h.minutos !== null); // Remove sujeiras
+
+        // 2. Agrupa os horários em "Dias" (Blocos de até 4 batidas lógicas e cronológicas)
+        let diasAgrupados = [];
+        let diaAtual = [];
+
+        for (let i = 0; i < horariosEmMinutos.length; i++) {
+            let batida = horariosEmMinutos[i];
+            
+            // Se o dia atual está vazio, adiciona a primeira batida
+            if (diaAtual.length === 0) {
+                diaAtual.push(batida);
+            } else {
+                // Só adiciona a próxima batida se for MAIOR cronologicamente que a anterior
+                let ultimaBatida = diaAtual[diaAtual.length - 1];
+                if (batida.minutos > ultimaBatida.minutos && diaAtual.length < 4) {
+                    diaAtual.push(batida);
+                } else {
+                    // Se o horário for menor (ex: 17:00 seguido de 08:00), significa que virou o dia!
+                    // Ou se já tem 4 batidas, fecha o pacote e abre um novo dia.
+                    diasAgrupados.push(diaAtual);
+                    diaAtual = [batida];
+                }
+            }
+        }
+        if (diaAtual.length > 0) diasAgrupados.push(diaAtual);
+
+        // 3. Injeta no Espelho A4 Linha por Linha
+        let alteracoesFeitas = 0;
+        let linhasTabela = document.querySelectorAll('#folha-a4-render tr:not(.tr-ds):not(.tr-folga)');
+        let indexDiaExtraido = 0;
+
+        linhasTabela.forEach(tr => {
+            // Ignora a linha do cabeçalho
+            if (tr.querySelector('th')) return;
+
+            let tdsEditaveis = tr.querySelectorAll('.td-edit');
+            if (tdsEditaveis.length !== 4) return; // Tem que ter as 4 colunas
+
+            // Verifica se a linha atual está completamente vazia
+            let linhaVazia = Array.from(tdsEditaveis).every(td => td.innerText.trim() === '');
+
+            if (linhaVazia && indexDiaExtraido < diasAgrupados.length) {
+                let pacoteDoDia = diasAgrupados[indexDiaExtraido];
+                
+                // Injeta os horários do pacote nas respectivas colunas
+                for (let j = 0; j < pacoteDoDia.length; j++) {
+                    tdsEditaveis[j].innerText = pacoteDoDia[j].texto;
+                    alteracoesFeitas++;
+                }
+                
+                // Dispara o cálculo para atualizar os totais dessa linha
+                calcularLinhaA4(tdsEditaveis[0], false); 
+                indexDiaExtraido++;
+            }
+        });
+
+        // 4. Feedback e Salvamento
+        if (alteracoesFeitas > 0) {
+            dispararAutoSave(); // Salva tudo na nuvem com a animação
+            abrirModal("Sucesso OCR", `${alteracoesFeitas} horários foram distribuídos inteligentemente. <b>Sempre confira os números antes de imprimir!</b>`, "sucesso");
+        } else {
+            abrirModal("Aviso", "A IA leu os horários, mas ou não encontrou linhas vazias suficientes, ou os dados estavam muito confusos para agrupar cronologicamente.", "erro");
+        }
+    }
   
     // EXPORTANDO FUNÇÕES PARA O HTML
     window.fazerLogin = fazerLogin;
@@ -1045,9 +1255,107 @@
     window.formatarCampo = formatarCampo;
     window.gerarFolhaTradicional = gerarFolhaTradicional;
     window.sincronizarComNuvem = sincronizarComNuvem;
+    window.dispararAutoSave = dispararAutoSave;
+    window.processarImagemOCR = processarImagemOCR;
+
+    // --- SISTEMA DE AUTO-SAVE COM DEBOUNCE E ANIMAÇÃO ---
+    let autoSaveTimeout = null;
+
+    function dispararAutoSave() {
+        const indicador = document.getElementById('btnSalvarNuvem');
+        if (indicador) {
+            indicador.style.display = 'flex';
+            indicador.style.opacity = '1';
+            indicador.style.background = '#F59E0B'; 
+            indicador.innerHTML = `<div class="modern-spinner" style="width:20px;height:20px;border-width:2px;border-left-color:white;"></div>`;
+        }
+
+        clearTimeout(autoSaveTimeout);
+        autoSaveTimeout = setTimeout(() => {
+            salvarFolhaA4(true); 
+            sincronizarComNuvemSilencioso(); 
+        }, 1500); 
+    }
+
+    async function sincronizarComNuvemSilencioso() {
+        const valMes = document.getElementById('tradMesData').value;
+        if(!valMes || !currentUser) return;
+        
+        let edicoesSalvas = JSON.parse(localStorage.getItem('folhaManual_' + currentUser.loginID + '_' + valMes) || "{}");
+        let partesMes = valMes.split('-'); 
+        let ano = parseInt(partesMes[0]); 
+        let mesInt = parseInt(partesMes[1]);
+        let dataHoraDispositivo = new Date().toLocaleString('pt-BR'); 
+
+        let promises = [];
+
+        for(let diaStr in edicoesSalvas) {
+            if(diaStr === '_obs') continue;
+            let objDoDia = edicoesSalvas[diaStr]; let diaNum = parseInt(diaStr);
+            let mesDoDia = (diaNum > 10) ? mesInt - 1 : mesInt; let anoDoDia = ano; 
+            if(mesDoDia === 0) { mesDoDia = 12; anoDoDia--; }
+            
+            let dd = String(diaNum).padStart(2,'0'); let mm = String(mesDoDia).padStart(2,'0');
+            let dataFormatada = `${dd}/${mm}/${anoDoDia}`;
+            let mapeamento = [ { key: 'e', tipo: "Entrada" }, { key: 'ia', tipo: "Almoço" }, { key: 'ta', tipo: "Retorno" }, { key: 's', tipo: "Saída Final" } ];
+
+            for(let item of mapeamento) {
+                let valorEditado = objDoDia[item.key];
+                if (valorEditado !== undefined) {
+                    let chaveFirebase = `${dd}_${mm}_${anoDoDia}_${item.tipo}`;
+                    let registroAntigo = historicoGlobal.find(h => h.data === dataFormatada && h.tipo === item.tipo);
+
+                    if (valorEditado === "") {
+                        if (registroAntigo) {
+                            promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebase}`), null));
+                        }
+                    } else {
+                        if (!registroAntigo || registroAntigo.hora !== valorEditado) {
+                            let payload = { usuario: currentUser.user.nome, data: dataFormatada, hora: valorEditado, tipo: item.tipo, noLocal: geo.ok, dataHoraDispositivo: dataHoraDispositivo, obs: `AutoSave Espelho em ${dataHoraDispositivo}` };
+                            promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebase}`), payload));
+                        }
+                    }
+                }
+            }
+        }
+
+        if (edicoesSalvas['_obs'] !== undefined) {
+            let obsAntiga = historicoGlobal.find(h => h.tipo === 'ObservacaoMensal' && h.mesAno === valMes)?.texto || "";
+            if (edicoesSalvas['_obs'] !== obsAntiga) {
+                let chaveFirebaseObs = `OBS_MENSAL_${valMes}`;
+                promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebaseObs}`), { tipo: 'ObservacaoMensal', mesAno: valMes, texto: edicoesSalvas['_obs'] }));
+            }
+        }
+
+        try {
+            if(promises.length > 0) {
+                await Promise.all(promises);
+                get(ref(database, `historico/${currentUser.loginID}`)).then((snapshot) => {
+                    historicoGlobal = [];
+                    if (snapshot.exists()) { snapshot.forEach((childSnapshot) => { historicoGlobal.push(childSnapshot.val()); }); }
+                });
+            }
+            
+            const indicador = document.getElementById('btnSalvarNuvem');
+            indicador.style.background = 'var(--success)';
+            indicador.innerHTML = `
+                <svg class="svg-success" viewBox="0 0 52 52">
+                    <circle cx="26" cy="26" r="25"></circle>
+                    <path d="M14.1 27.2l7.1 7.2 16.7-16.8"></path>
+                </svg>
+            `;
+            
+            setTimeout(() => { indicador.style.opacity = '0'; }, 2500);
+
+        } catch (error) {
+            const indicador = document.getElementById('btnSalvarNuvem');
+            indicador.style.background = 'var(--danger)';
+            indicador.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+        }
+    }
 
     // --- SISTEMA DE DESPERTADOR / NOTIFICAÇÕES REAIS ---
-    let ultimaNotificacaoEnviada = ""; // Evita mandar a mesma notificação repetida no mesmo minuto
+    let ultimaNotificacaoEnviada = ""; 
 
     function checarDespertador() {
         if (!currentUser || Notification.permission !== "granted") return;
@@ -1058,16 +1366,12 @@
         const horaAtualStr = `${hora}:${min}`;
         const diaSemana = agora.getDay();
 
-        // Não apita de final de semana
         if (diaSemana === 0 || diaSemana === 6) return;
 
-        // Horários dependendo do usuário (Karina/Alane vs Outros)
-        const isHorarioTarde = currentUser.loginID.match(/karina|alane/);
-
+        const isHorarioTarde = (currentUser.loginID || "").match(/karina|alane/);
         let mensagens = {};
 
         if (isHorarioTarde) {
-            // Horários para quem trabalha 08h - 17h
             mensagens = {
                 "07:55": "Bom dia! Quase na hora de registrar sua entrada (08h).",
                 "12:00": "Hora do almoço! Não se esqueça de registrar a saída.",
@@ -1075,7 +1379,6 @@
                 "17:00": "Fim de expediente! Registre sua saída final."
             };
         } else {
-            // Horários padrão 07h - 16h
             mensagens = {
                 "06:55": "Bom dia! Quase na hora de registrar sua entrada (07h).",
                 "12:00": "Hora do almoço! Não se esqueça de registrar a saída.",
@@ -1084,41 +1387,39 @@
             };
         }
 
-        // Se a hora atual bate com algum alarme e ainda não enviamos essa notificação
         if (mensagens[horaAtualStr] && ultimaNotificacaoEnviada !== horaAtualStr) {
             enviarNotificacaoReal("Ponto Laranjeiras", mensagens[horaAtualStr]);
-            ultimaNotificacaoEnviada = horaAtualStr; // Marca que já enviou
+            ultimaNotificacaoEnviada = horaAtualStr; 
         }
         
-        // Limpa a memória à meia-noite para o dia seguinte
         if (horaAtualStr === "00:00") ultimaNotificacaoEnviada = "";
     }
 
     function enviarNotificacaoReal(titulo, corpo) {
         if (Notification.permission === "granted") {
             try {
-                // Tenta usar ServiceWorker (Melhor para Celular/PWA)
-                navigator.serviceWorker.getRegistration().then(function(reg) {
-                    if (reg) {
-                        reg.showNotification(titulo, {
-                            body: corpo,
-                            icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Bras%C3%A3o_de_Caieiras.svg/192px-Bras%C3%A3o_de_Caieiras.svg.png",
-                            vibrate: [200, 100, 200], // Vibração padrão
-                            requireInteraction: true // A notificação fica na tela até clicar
-                        });
-                    } else {
-                        // Se não tiver ServiceWorker, tenta a notificação padrão web
-                        new Notification(titulo, { body: corpo, icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Bras%C3%A3o_de_Caieiras.svg/192px-Bras%C3%A3o_de_Caieiras.svg.png" });
-                    }
-                });
+                if ("serviceWorker" in navigator) {
+                    navigator.serviceWorker.getRegistration().then(function(reg) {
+                        if (reg) {
+                            reg.showNotification(titulo, {
+                                body: corpo,
+                                icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Bras%C3%A3o_de_Caieiras.svg/192px-Bras%C3%A3o_de_Caieiras.svg.png",
+                                vibrate: [200, 100, 200], 
+                                requireInteraction: true 
+                            });
+                        } else {
+                            new Notification(titulo, { body: corpo, icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Bras%C3%A3o_de_Caieiras.svg/192px-Bras%C3%A3o_de_Caieiras.svg.png" });
+                        }
+                    });
+                } else {
+                    new Notification(titulo, { body: corpo, icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Bras%C3%A3o_de_Caieiras.svg/192px-Bras%C3%A3o_de_Caieiras.svg.png" });
+                }
             } catch (e) {
-                // Fallback de segurança
                 new Notification(titulo, { body: corpo });
             }
         }
     }
 
-    // Inicia o "Relógio" do sistema: ele checa a hora a cada 30 segundos
     setInterval(checarDespertador, 30000);
   </script>
 </body>
