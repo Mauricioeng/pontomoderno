@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2563EB">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Bras%C3%A3o_de_Caieiras.svg/192px-Bras%C3%A3o_de_Caieiras.svg.png">
+
+  <title>UBS Laranjeiras - Ponto Único</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { 
+      --bg: #F3F4F6; 
+      --card: #FFFFFF; 
+      --primary: #2563EB; 
+      --primary-hover: #1D4ED8;
+      --success: #10B981; 
+      --danger: #EF4444; 
+      --warning: #F59E0B; 
+      --text-main: #111827; 
+      --text-muted: #6B7280;
+      --border: #E5E7EB;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    * { box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background: var(--bg); margin: 0; padding-bottom: 30px; color: var(--text-main); }
+    
+    .flex { display: flex; align-items: center; } 
+    .justify-between { justify-content: space-between; } 
+    .gap-2 { gap: 8px; }
+
+    /* LOADER */
+    .loader-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
+    .modern-spinner { width: 50px; height: 50px; border: 5px solid rgba(37, 99, 235, 0.15); border-left-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { margin-top: 24px; font-weight: 800; color: var(--primary); font-size: 14px; letter-spacing: 1.5px; animation: pulse 1.5s infinite; text-transform: uppercase; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    
+    /* LOGIN */
+    #login-screen { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .login-box { background: var(--card); padding: 40px 30px; border-radius: 24px; width: 100%; max-width: 380px; box-shadow: var(--shadow-lg); text-align: center; }
+    .login-box h2 { margin: 10px 0 24px; font-weight: 800; color: var(--text-main); font-size: 24px; }
+    
+    /* CABEÇALHO COMPACTO */
+    .header { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); padding: 12px 16px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
+    .header h1 { margin: 0; font-size: 16px; font-weight: 800; letter-spacing: -0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+    .avatar-icon { width: 34px; height: 34px; background: linear-gradient(135deg, var(--primary), #60A5FA); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 13px; letter-spacing: 1px; box-shadow: var(--shadow-sm); flex-shrink: 0; }
+    .status-badge { font-size:11px; font-weight:700; padding:6px 10px; border-radius:999px; display:flex; align-items:center; gap:5px; box-shadow: var(--shadow-sm); transition: 0.3s; cursor: pointer; }
+    .status-badge svg { width: 14px; height: 14px; }
+
+    /* LAYOUT & CARDS */
+    .container { padding: 16px; max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+    .card { background: var(--card); border-radius: 20px; padding: 24px; box-shadow: var(--shadow-md); border: 1px solid rgba(255,255,255,0.5); }
+    .card-title { font-size: 12px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    
+    /* ACORDEÃO (DETAILS/SUMMARY) */
+    details summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; outline: none; }
+    details summary::-webkit-details-marker { display: none; }
+    details summary .seta-icon { transition: transform 0.3s ease; color: var(--text-muted); }
+    details[open] summary .seta-icon { transform: rotate(180deg); }
+    details.card[open] summary { margin-bottom: 15px; }
+
+    /* INPUTS & BOTÕES */
+    label { font-size: 13px; font-weight: 600; margin-bottom: 8px; display: block; color: var(--text-main); }
+    input, select { width: 100%; background: #F9FAFB; border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; font-size: 15px; margin-bottom: 16px; outline: none; transition: all 0.2s; color: var(--text-main); }
+    input:focus, select:focus { border-color: var(--primary); background: #EFF6FF; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+    
+    .btn { width: 100%; background: var(--primary); color: white; font-size: 15px; font-weight: 700; border: none; border-radius: 14px; padding: 16px; cursor: pointer; transition: all 0.2s; display:flex; justify-content:center; align-items:center; gap:8px; box-shadow: 0 4px 6px rgba(37,99,235,0.2); }
+    .btn:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 6px 8px rgba(37,99,235,0.3); }
+    .btn:active { transform: translateY(1px); box-shadow: none; }
+    .btn-green { background: var(--success); box-shadow: 0 4px 6px rgba(16,185,129,0.2); }
+    .btn-green:hover { background: #059669; box-shadow: 0 6px 8px rgba(16,185,129,0.3); }
+    .btn-outline { background: transparent; color: var(--text-main); border: 1px solid var(--border); box-shadow: none; }
+    .btn-outline:hover { background: #F3F4F6; border-color: #D1D5DB; }
+
+    /* NOTIFICAÇÃO E BOTÃO FLUTUANTE DISCRETO */
+    .notification-box { margin-top: 15px; padding: 12px 16px; background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px; font-size: 13px; display: flex; flex-direction: column; gap: 10px; animation: fadeIn 1s forwards; }
+    
+    .btn-flutuante { 
+      position: fixed; bottom: 25px; right: 20px; 
+      background: var(--primary); color: white; border: none; 
+      border-radius: 50%; width: 50px; height: 50px; 
+      display: flex; justify-content: center; align-items: center; 
+      box-shadow: var(--shadow-lg); cursor: pointer; z-index: 1000; 
+      opacity: 0.6; backdrop-filter: blur(4px); transition: all 0.3s ease; 
+    }
+    .btn-flutuante:hover, .btn-flutuante:active { opacity: 1; transform: scale(1.05); }
+
+    /* MODAIS */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center; padding: 20px; animation: fadeIn 0.2s; }
+    .modal-box { background: var(--card); width: 100%; max-width: 360px; border-radius: 24px; text-align: center; box-shadow: var(--shadow-lg); animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); overflow: hidden; padding-top: 20px; }
+    .modal-box h3 { margin: 0 0 8px; font-size: 18px; color: var(--text-main); font-weight: 800; }
+    .modal-box p { margin: 0 20px 24px; font-size: 14px; color: var(--text-muted); line-height:1.5; }
+    .modal-btn { width: 100%; border: none; border-top: 1px solid var(--border); background: #F9FAFB; color: var(--primary); font-size: 15px; font-weight: 700; padding: 18px; cursor: pointer; transition: 0.2s; }
+    .modal-btn:active { background: #F3F4F6; }
+    @keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* ASSISTENTE */
+    .chat-bubble { animation: textFadeIn 0.5s ease-out forwards; }
+    @keyframes textFadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    .typing-cursor { border-right: 2px solid var(--primary); animation: blinkCursor 0.7s infinite; padding-right: 4px; }
+    @keyframes blinkCursor { from { border-right-color: var(--primary); } to { border-right-color: transparent; } }
+
+    /* ESPELHO A4 MELHORADO */
+    .folha-container { background: #fff; border-radius: 16px; box-shadow: var(--shadow-sm); padding: 20px; border: 1px solid var(--border); width: 100%; overflow: hidden; }
+    .doc-header { display: flex; align-items: center; gap: 15px; border-bottom: 2px solid #1E293B; padding-bottom: 12px; margin-bottom: 15px; }
+    .doc-header img { width: 65px; height: auto; }
+    .doc-header-text h2 { margin: 0; font-size: 17px; font-weight: 900; color: #1E293B; text-transform: uppercase; letter-spacing: 0.5px; }
+    .doc-header-text p { margin: 2px 0 0; font-size: 10px; color: #64748B; font-weight: 500; }
+    
+    .doc-info { background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 15px; border-radius: 8px; font-size: 12px; line-height: 1.6; color: #334155; margin-bottom: 20px; }
+    .doc-info b { color: #0F172A; }
+
+    .tabela-espelho { width: 100%; border-collapse: collapse; text-align: center; font-size: 13px; table-layout: fixed; }
+    .tabela-espelho th, .tabela-espelho td { border: 1px solid #CBD5E1; padding: 8px 4px; vertical-align: middle; word-wrap: break-word; }
+    .tabela-espelho th { background: #1E293B; color: #fff; font-size: 10px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; padding: 10px 4px; }
+    
+    .td-edit { background: transparent; font-family: 'Courier New', monospace; font-size: 14px; font-weight: 700; color: var(--primary); outline: none; cursor: text; transition: 0.2s; }
+    .td-edit:focus { background: #EFF6FF; box-shadow: inset 0 0 0 2px var(--primary); border-radius: 4px; }
+    .td-total, .td-saldo { font-weight: 800; font-family: monospace; font-size: 13px; }
+    .td-total { background: #F1F5F9; color: #334155; }
+    
+    .tr-ds { background: #F8FAFC; color: #94A3B8; font-size: 11px; letter-spacing: 1px; }
+    .tr-folga { background: #FEF2F2; color: #EF4444; font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+
+    .resumo-espelho { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 20px; }
+    .box-resumo { background: #fff; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #CBD5E1; }
+    .box-resumo span { font-size: 9px; font-weight: 800; color: #64748B; text-transform: uppercase; display: block; margin-bottom: 4px; letter-spacing: 0.5px; }
+    .box-resumo b { font-size: 16px; color: #0F172A; }
+
+    /* CAMPO DE OBSERVAÇÕES E ATESTADOS */
+    .doc-obs { margin-top: 20px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px; text-align: left; }
+    .doc-obs-title { font-size: 10px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .obs-edit { min-height: 50px; font-size: 13px; color: #334155; outline: none; line-height: 1.5; white-space: pre-wrap; font-family: 'Inter', sans-serif; cursor: text; transition: 0.2s; }
+    .obs-edit:empty:before { content: "Clique para digitar anotações, atestados ou lembretes deste mês..."; color: #94A3B8; pointer-events: none; display: block; }
+    .obs-edit:focus { background: #fff; border-radius: 4px; box-shadow: inset 0 0 0 2px var(--primary); padding: 6px; margin: -6px; color: var(--text-main); }
+
+    /* MEDIA QUERY PARA CELULARES */
+    @media (max-width: 600px) {
+       .folha-container { padding: 12px; border-radius: 12px; }
+       .tabela-espelho th { font-size: 8px; padding: 6px 2px; letter-spacing: -0.5px; }
+       .tabela-espelho td { font-size: 11px; padding: 6px 2px; }
+       .td-edit { font-size: 11px; padding: 8px 2px !important; letter-spacing: -0.5px; }
+       .td-total, .td-saldo { font-size: 11px; letter-spacing: -0.5px; }
+       .box-resumo span { font-size: 8px; }
+       .box-resumo b { font-size: 14px; }
+       .resumo-espelho { gap: 6px; }
+    }
+
+    /* MODAL DE LISTA DE PONTO */
+    .linha-ponto { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .linha-ponto:last-child { border-bottom: none; }
+    .linha-ponto label { margin: 0; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px; font-size: 13px; }
+    .linha-ponto input { width: 120px; margin: 0; text-align: center; font-family: monospace; font-size: 15px; font-weight: 800; color: var(--primary); padding: 10px; }
+
+    /* IMPRESSÃO */
+    @media print {
+      @page { size: A4 portrait; margin: 15mm; } body * { visibility: hidden; }
+      #espelho-print-area, #espelho-print-area * { visibility: visible; }
+      #espelho-print-area { position: absolute; left: 0; top: 0; width: 100%; }
+      .folha-container { overflow: visible; box-shadow: none; border: none; padding: 0; min-width: 100%; }
+      .tabela-espelho { min-width: 100%; }
+      .tabela-espelho th { background: #e2e8f0 !important; color: #000 !important; -webkit-print-color-adjust: exact; border-color: #000; }
+      .tabela-espelho th, .tabela-espelho td { border: 1px solid #000; padding: 5px 4px; font-size: 11px; }
+      .td-edit { color: #000 !important; }
+      .doc-info { border: 1px solid #000; background: transparent; }
+      .resumo-espelho { gap: 0; display: flex; justify-content: space-between; border: 1px solid #000; padding: 10px; margin-top: 15px; }
+      .box-resumo { border: none; padding: 0; width: 33%; }
+      .doc-obs { background: transparent; border: 1px solid #000; padding: 8px; border-radius: 0; margin-top: 15px; break-inside: avoid; }
+      .obs-edit:empty:before { display: none; }
+      .obs-edit { min-height: 30px; font-size: 11px; color: #000; padding: 0; margin: 0; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="global-loader" class="loader-overlay">
+    <div class="modern-spinner"></div>
+    <div id="loader-text" class="loading-text">INICIANDO SISTEMA...</div>
+  </div>
+
+  <div id="login-screen" style="display:none;">
+    <div class="login-box">
+      <svg width="100" height="90" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 10px; display: block;">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <circle cx="19" cy="11" r="5" fill="#fff" stroke="var(--warning)" stroke-width="1.5" />
+        <polyline points="19 8 19 11 21 12" stroke="var(--warning)" stroke-width="1.5">
+           <animateTransform attributeName="transform" type="rotate" from="0 19 11" to="360 19 11" dur="4s" repeatCount="indefinite" />
+        </polyline>
+      </svg>
+      <h2>Ponto Laranjeiras</h2>
+      <input type="text" id="lUser" placeholder="Usuário do Servidor" style="text-transform: lowercase;">
+      <input type="password" id="lPass" placeholder="Senha de Acesso">
+      <button class="btn" id="btnLogin" onclick="fazerLogin()">Acessar Painel</button>
+      <p id="loginError" style="color:var(--danger); font-size:13px; margin-top:15px; display:none; font-weight:600;"></p>
+    </div>
+  </div>
+
+  <div id="main-content" style="display:none;">
+    
+    <!-- CABEÇALHO COMPACTO -->
+    <div class="header flex justify-between no-print">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div id="userAvatar" class="avatar-icon">US</div>
+        <div style="display:flex; flex-direction:column;">
+          <h1 id="userName">Nome</h1>
+          <span id="userCargo" style="display:none;">Cargo Oculto</span> 
+        </div>
+      </div>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <div id="statusGps" class="status-badge" style="background:#FEE2E2; color:var(--danger);" title="Buscando Localização">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"></circle></svg> GPS
+        </div>
+        <div class="status-badge" style="background:#F3F4F6; color:var(--text-muted); padding: 8px;" onclick="location.reload()" title="Sair do Sistema">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      
+      <!-- ASSISTENTE INTELIGENTE -->
+      <details class="no-print chat-bubble" open style="background: var(--card); border-radius: 20px; box-shadow: var(--shadow-md); border: 1px solid var(--border); padding: 0;">
+        <summary style="padding: 20px 24px; border-bottom: 1px solid #F3F4F6;">
+           <div style="display:flex; align-items:center; gap:10px; flex:1;">
+             <div style="background: linear-gradient(135deg, #2563EB, #60A5FA); width:28px; height:28px; border-radius:8px; display:flex; justify-content:center; align-items:center; box-shadow: 0 2px 4px rgba(37,99,235,0.3);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+             </div>
+             <span style="font-size: 13px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px;">Inteligência do Ponto</span>
+           </div>
+           
+           <svg class="seta-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </summary>
+        
+        <div style="padding: 0 24px 24px 24px;">
+           <div id="msg-conversa" style="font-size: 15px; line-height: 1.6; color: var(--text-main); margin-top: 15px;">Analisando seus dados...</div>
+
+           <!-- Caixa de Consentimento de Notificações -->
+           <div id="box-notificacao" class="notification-box" style="display:none;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                 <span style="font-weight: 600; flex:1;">Aceita receber notificações sobre seu ponto e banco de horas?</span>
+              </div>
+              <div style="display:flex; gap:10px;">
+                <button class="btn btn-outline" style="padding:10px; font-size:13px;" onclick="tratarNotificacao(true, this)">Sim, eu quero</button>
+                <button class="btn btn-outline" style="padding:10px; font-size:13px; color:var(--text-muted); border-color:transparent;" onclick="tratarNotificacao(false, this)">Agora não</button>
+              </div>
+           </div>
+
+           <button class="btn btn-green" style="margin-top: 20px; font-size: 16px; padding: 18px; letter-spacing: 0.5px;" onclick="abrirModalPonto()">
+             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+             ABRIR PAINEL DE HORÁRIOS
+           </button>
+        </div>
+      </details>
+
+      <details class="card no-print" id="card-sincronizacao">
+        <summary>
+           <div class="card-title" style="margin-bottom: 0; display: flex; align-items: center; gap: 8px;">
+             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+             Histórico
+           </div>
+           <svg class="seta-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </summary>
+        
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <label>Mês de Fechamento (Dia 11 a 10)</label>
+          <input type="month" id="tradMesData" value="2026-04" onchange="gerarFolhaTradicional()">
+          
+          <div style="display:flex; gap:12px; align-items: center; background: #F0FDF4; padding: 12px; border-radius: 12px; border: 1px solid #BBF7D0;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            <span style="flex:1; font-size:13px; color:#166534; font-weight:700;">Atualizado na Tela</span>
+            <button class="btn btn-outline" style="width:auto; padding:10px 16px; font-size:14px;" onclick="window.print()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            </button>
+          </div>
+          <p style="font-size:12px; color:var(--text-muted); margin-top:5px; text-align:center;">
+            Ao digitar os horários abaixo, o sistema formata com "<b>:</b>" automaticamente.
+          </p>
+        </div>
+      </details>
+
+      <div id="espelho-print-area">
+        <div id="folha-a4-render"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Botão Flutuante Discreto (Rodapé) -->
+  <button id="btnSalvarNuvem" class="btn-flutuante no-print" style="display:none;" onclick="sincronizarComNuvem()" title="Salvar na Nuvem">
+     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+  </button>
+
+  <div id="modalPonto" class="modal-overlay">
+    <div class="modal-box" style="padding: 24px;">
+      <h3 style="margin-bottom: 15px;">Registrar Horários</h3>
+      
+      <div style="margin-bottom: 20px;">
+        <label for="inpDataRegistro" style="display:flex; align-items:center; justify-content:center; gap:8px; color:var(--primary); font-size:14px; margin-bottom:10px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          Data do Registro
+        </label>
+        <input type="date" id="inpDataRegistro" onchange="carregarHorariosDoDiaSelecionado()" style="text-align:center; font-weight:700; color:var(--primary); font-family:monospace; margin-bottom:0;">
+      </div>
+
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">
+        Preencha os horários da data selecionada acima. <b>A localização será registrada.</b>
+      </p>
+
+      <div style="background: #F9FAFB; padding: 10px 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px;">
+         
+         <div class="linha-ponto">
+            <label>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg> 
+              Entrada
+            </label>
+            <input type="time" id="inpEntrada">
+         </div>
+         
+         <div class="linha-ponto">
+            <label>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg> 
+              Saída Almoço
+            </label>
+            <input type="time" id="inpAlmoco">
+         </div>
+         
+         <div class="linha-ponto">
+            <label>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg> 
+              Retorno
+            </label>
+            <input type="time" id="inpRetorno">
+         </div>
+         
+         <div class="linha-ponto">
+            <label>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> 
+              Saída Final
+            </label>
+            <input type="time" id="inpSaida">
+         </div>
+
+      </div>
+
+      <button class="btn btn-green" style="padding: 16px; font-size: 16px;" onclick="salvarHorariosLote()">
+         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+         Salvar Horários
+      </button>
+
+      <button class="modal-btn" style="margin-top: 10px; border-top: none; background: transparent; color: var(--text-muted);" onclick="fecharModalPonto()">Cancelar</button>
+    </div>
+  </div>
+
+  <div id="customModal" class="modal-overlay">
+    <div class="modal-box">
+      <div id="modalIcon" style="font-size:48px; margin-top:24px;">✅</div>
+      <h3 id="modalTitle">Sucesso</h3><p id="modalMsg">Mensagem</p>
+      <button class="modal-btn" onclick="document.getElementById('customModal').style.display='none'">OK</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+    // CHAVES DO FIREBASE (Só para o Banco de Dados agora)
+    const firebaseConfig = {
+      apiKey: "AIzaSyDrcb9hOtTIcDwb96WxfQ_Nu8hCoOH6-o8",
+      authDomain: "corepontomoderno.firebaseapp.com",
+      databaseURL: "https://corepontomoderno-default-rtdb.firebaseio.com",
+      projectId: "corepontomoderno",
+      storageBucket: "corepontomoderno.firebasestorage.app",
+      messagingSenderId: "482776711687",
+      appId: "1:482776711687:web:3c205abb8c5988d6ce20a2"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+
+    // LINK DO SEU GOOGLE APPS SCRIPT (Que agora é só o Guarda-costas do Login)
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz2C7CMDee5LlUPCkYzTcEMjuWd-DzztpLIvQyi7h02nfI_2lmRr2gZcMCiDpzDelrP/exec"; 
+
+  const FERIADOS_2026 = [
+      { data: "01/01/2026", nome: "Confraternização Universal" }, 
+      { data: "16/02/2026", nome: "A compensar (Carnaval)" },
+      { data: "17/02/2026", nome: "Carnaval" }, 
+      { data: "18/02/2026", nome: "Cinzas (até 13h)" },
+      { data: "03/04/2026", nome: "Sexta Feira Santa" }, 
+      { data: "05/04/2026", nome: "Páscoa" },
+      { data: "20/04/2026", nome: "A compensar (Tiradentes)" },
+      { data: "21/04/2026", nome: "Tiradentes" }, 
+      { data: "01/05/2026", nome: "Dia do Trabalho" },
+      { data: "04/06/2026", nome: "Corpus Christi" }, 
+      { data: "05/06/2026", nome: "A compensar (Corpus Christi)" },
+      { data: "13/06/2026", nome: "Padroeiro da Cidade" },
+      { data: "09/07/2026", nome: "Data Magna SP" }, 
+      { data: "10/07/2026", nome: "A compensar (Data Magna)" },
+      { data: "07/09/2026", nome: "Independência do Brasil" },
+      { data: "12/10/2026", nome: "N. Sra. Aparecida" }, 
+      { data: "28/10/2026", nome: "Dia do Servidor" },
+      { data: "02/11/2026", nome: "Finados" }, 
+      { data: "15/11/2026", nome: "Proclamação da República" },
+      { data: "20/11/2026", nome: "Consciência Negra" }, 
+      { data: "14/12/2026", nome: "Aniversário da Cidade" },
+      { data: "24/12/2026", nome: "Véspera de Natal" },
+      { data: "25/12/2026", nome: "Natal" },
+      { data: "31/12/2026", nome: "Véspera de Ano Novo" }
+    ];
+
+    let currentUser = null; 
+    let geo = { lat: 0, lon: 0, ok: false }; 
+    let historicoGlobal = []; 
+    let feriadosGlobal = FERIADOS_2026;
+    let climaAtual = null;
+
+    window.onload = () => {
+        setTimeout(() => {
+            document.getElementById('global-loader').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('global-loader').style.display = 'none';
+                document.getElementById('login-screen').style.display = 'flex';
+            }, 500);
+        }, 1200);
+    };
+
+    function mostrarLoader(texto) {
+        document.getElementById('loader-text').innerText = texto;
+        const loader = document.getElementById('global-loader');
+        loader.style.display = 'flex';
+        setTimeout(() => loader.style.opacity = '1', 10);
+    }
+
+    function ocultarLoader() {
+        const loader = document.getElementById('global-loader');
+        loader.style.opacity = '0';
+        setTimeout(() => loader.style.display = 'none', 500);
+    }
+
+    function abrirModal(titulo, msg, tipo='sucesso') {
+      document.getElementById('modalTitle').innerText = titulo; 
+      document.getElementById('modalMsg').innerHTML = msg;
+      document.getElementById('modalIcon').innerText = tipo === 'erro' ? '⚠️' : '✅'; 
+      document.getElementById('customModal').style.display = 'flex';
+    }
+
+    // --- LOGIN HÍBRIDO: HTML -> GOOGLE APPS SCRIPT ---
+    function fazerLogin() {
+      const login = document.getElementById('lUser').value.trim().toLowerCase(); 
+      const senha = document.getElementById('lPass').value.trim();
+      const err = document.getElementById('loginError');
+      if(!login || !senha) return;
+      
+      err.style.display = 'none';
+      mostrarLoader("AUTENTICANDO...");
+      
+      // Envia a senha para o Google Apps Script verificar em segredo
+      fetch(WEB_APP_URL, { 
+        method: "POST", 
+        headers: { "Content-Type": "text/plain;charset=utf-8" }, 
+        body: JSON.stringify({ acao: "login", login: login, senha: senha })
+      })
+      .then(r => r.json())
+      .then(res => {
+        if(res.autorizado) {
+          currentUser = res; 
+          currentUser.loginID = login;
+          
+          document.getElementById('login-screen').style.display = 'none'; 
+          document.getElementById('main-content').style.display = 'block';
+          
+          let nomes = currentUser.user.nome.split(' ');
+          let iniciais = nomes[0].charAt(0).toUpperCase() + (nomes.length > 1 ? nomes[nomes.length-1].charAt(0).toUpperCase() : '');
+          document.getElementById('userAvatar').innerText = iniciais;
+          document.getElementById('userName').innerText = nomes[0] + (nomes.length > 1 ? ' ' + nomes[nomes.length-1] : ''); 
+          document.getElementById('btnSalvarNuvem').style.display = 'flex'; 
+          
+          carregarHistorico(); 
+          iniciarGps(); 
+          ocultarLoader();
+        } else {
+          ocultarLoader();
+          err.innerText = "Credenciais incorretas!"; 
+          err.style.display = 'block';
+        }
+      }).catch(e => { 
+          ocultarLoader();
+          err.innerText = "Erro na rede. Verifique a internet."; err.style.display='block'; 
+      });
+    }
+
+    // --- DAQUI PRA BAIXO, TUDO É FIREBASE ---
+    function carregarHistorico() {
+      mostrarLoader("CARREGANDO HISTÓRICO...");
+      get(ref(database, `historico/${currentUser.loginID}`)).then((snapshot) => {
+          historicoGlobal = [];
+          if (snapshot.exists()) {
+              snapshot.forEach((childSnapshot) => {
+                  historicoGlobal.push(childSnapshot.val());
+              });
+          }
+          atualizarPainelFrontEnd();
+          gerarFolhaTradicional(); 
+          ocultarLoader();
+      }).catch((error) => {
+          ocultarLoader();
+          abrirModal("Erro", "Não foi possível carregar os dados.", "erro");
+      });
+    }
+
+    // --- SALVAR LOTE FIREBASE (Manual) ---
+    async function salvarHorariosLote() {
+        const dataIso = document.getElementById('inpDataRegistro').value;
+        if (!dataIso) return abrirModal("Aviso", "Selecione uma data válida.", "erro");
+        
+        const [ano, mes, dia] = dataIso.split('-');
+        const dataEscolhidaStr = `${dia}/${mes}/${ano}`;
+        let dataHoraDispositivo = new Date().toLocaleString('pt-BR'); 
+        
+        let valoresTiradosDaTela = {
+            'Entrada': document.getElementById('inpEntrada').value,
+            'Almoço': document.getElementById('inpAlmoco').value,
+            'Retorno': document.getElementById('inpRetorno').value,
+            'Saída Final': document.getElementById('inpSaida').value
+        };
+
+        let regsDia = historicoGlobal.filter(h => h.data === dataEscolhidaStr);
+        let promises = [];
+        let novosRegistros = 0;
+
+        for (let tipo in valoresTiradosDaTela) {
+            let horaInjetada = valoresTiradosDaTela[tipo];
+            let horaQueJaTinha = regsDia.find(r => r.tipo === tipo)?.hora;
+
+            if (horaInjetada && horaInjetada !== horaQueJaTinha) {
+                let chaveFirebase = `${dia}_${mes}_${ano}_${tipo}`; 
+                
+                let obj = {
+                    usuario: currentUser.user.nome, 
+                    data: dataEscolhidaStr, 
+                    hora: horaInjetada, 
+                    tipo: tipo,
+                    noLocal: geo.ok,
+                    dataHoraDispositivo: dataHoraDispositivo,
+                    obs: geo.ok ? `Registrado via App em ${dataHoraDispositivo} (Local)` : `Registrado via App em ${dataHoraDispositivo} (Fora)`
+                };
+
+                promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebase}`), obj));
+                novosRegistros++;
+            }
+        }
+
+        if (novosRegistros === 0) { fecharModalPonto(); return abrirModal("Aviso", "Nenhum horário novo foi digitado.", "erro"); }
+
+        fecharModalPonto();
+        mostrarLoader("GRAVANDO NO FIREBASE...");
+
+        try {
+            await Promise.all(promises);
+            
+            // CORREÇÃO: Limpa o rascunho fantasma do celular para forçar a leitura do Firebase
+            const valMes = document.getElementById('tradMesData').value;
+            localStorage.removeItem('folhaManual_' + currentUser.loginID + '_' + valMes);
+            
+            ocultarLoader();
+            abrirModal("Sucesso", `Horários registrados instantaneamente!`, "sucesso");
+            carregarHistorico();
+        } catch (error) {
+            ocultarLoader();
+            abrirModal("Erro", "Ocorreu um problema ao salvar.", "erro");
+        }
+    }
+
+    // --- SINCRONIZAR A4 NO FIREBASE ---
+    async function sincronizarComNuvem() {
+        const valMes = document.getElementById('tradMesData').value;
+        if(!valMes || !currentUser) return;
+        
+        let edicoesSalvas = JSON.parse(localStorage.getItem('folhaManual_' + currentUser.loginID + '_' + valMes)) || {};
+        let partesMes = valMes.split('-'); 
+        let ano = parseInt(partesMes[0]); 
+        let mesInt = parseInt(partesMes[1]);
+        let dataHoraDispositivo = new Date().toLocaleString('pt-BR'); 
+
+        mostrarLoader("SINCRONIZANDO COM FIREBASE...");
+        let promises = [];
+
+        for(let diaStr in edicoesSalvas) {
+            if(diaStr === '_obs') continue; // Pula a observação aqui para processar só os dias
+            
+            let objDoDia = edicoesSalvas[diaStr];
+            let diaNum = parseInt(diaStr);
+            let mesDoDia = (diaNum > 10) ? mesInt - 1 : mesInt; 
+            let anoDoDia = ano; 
+            if(mesDoDia === 0) { mesDoDia = 12; anoDoDia--; }
+            
+            let dd = String(diaNum).padStart(2,'0');
+            let mm = String(mesDoDia).padStart(2,'0');
+            let dataFormatada = `${dd}/${mm}/${anoDoDia}`;
+
+            let mapeamento = [
+                { key: 'e', tipo: "Entrada" }, { key: 'ia', tipo: "Almoço" },
+                { key: 'ta', tipo: "Retorno" }, { key: 's', tipo: "Saída Final" }
+            ];
+
+            for(let item of mapeamento) {
+                let valorEditado = objDoDia[item.key];
+                
+                if (valorEditado !== undefined) {
+                    let chaveFirebase = `${dd}_${mm}_${anoDoDia}_${item.tipo}`;
+                    
+                    if (valorEditado === "") {
+                        promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebase}`), null));
+                    } else {
+                        let payload = {
+                            usuario: currentUser.user.nome,
+                            data: dataFormatada,
+                            hora: valorEditado,
+                            tipo: item.tipo,
+                            noLocal: geo.ok,
+                            dataHoraDispositivo: dataHoraDispositivo,
+                            obs: geo.ok ? `Sincronizado Espelho em ${dataHoraDispositivo} (Local)` : `Sincronizado Espelho em ${dataHoraDispositivo} (Fora)`
+                        };
+                        promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebase}`), payload));
+                    }
+                }
+            }
+        }
+
+        // NOVIDADE: Salva as observações do mês inteiro em um registro especial no Firebase
+        if (edicoesSalvas['_obs'] !== undefined) {
+            let chaveFirebaseObs = `OBS_MENSAL_${valMes}`;
+            let payloadObs = {
+                tipo: 'ObservacaoMensal',
+                mesAno: valMes,
+                texto: edicoesSalvas['_obs']
+            };
+            promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebaseObs}`), payloadObs));
+        }
+
+        try {
+            if(promises.length > 0) await Promise.all(promises);
+            
+            localStorage.removeItem('folhaManual_' + currentUser.loginID + '_' + valMes);
+            
+            ocultarLoader();
+            abrirModal("Nuvem Atualizada", "Banco de dados sincronizado em tempo real!", "sucesso");
+            carregarHistorico();
+        } catch (error) {
+            ocultarLoader();
+            abrirModal("Erro", "Falha de conexão com a Nuvem.", "erro");
+        }
+    }
+
+    // --- FUNÇÕES GEOLOCALIZAÇÃO E UTILITÁRIOS (MANTIDAS EXATAMENTE IGUAIS) ---
+    let climaBuscado = false;
+    function iniciarGps() {
+      if (!navigator.geolocation) { return; }
+      navigator.geolocation.watchPosition(pos => {
+        geo.lat = pos.coords.latitude; geo.lon = pos.coords.longitude;
+        const R = 6371e3; const dLat = (currentUser.ubsGeo.lat - geo.lat) * Math.PI/180; const dLon = (currentUser.ubsGeo.lon - geo.lon) * Math.PI/180;
+        const a = Math.sin(dLat/2)**2 + Math.cos(geo.lat*Math.PI/180)*Math.cos(currentUser.ubsGeo.lat*Math.PI/180)*Math.sin(dLon/2)**2;
+        geo.ok = (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))) <= 250;
+        
+        const gs = document.getElementById('statusGps');
+        if(geo.ok) {
+            gs.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"></circle></svg> Local`;
+            gs.style.background = "#D1FAE5"; gs.style.color = "#047857";
+        } else {
+            gs.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"></circle></svg> Fora`;
+            gs.style.background = "#FEF3C7"; gs.style.color = "#B45309";
+        }
+
+        if (!climaBuscado && geo.lat !== 0) {
+            climaBuscado = true;
+            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${geo.lat}&longitude=${geo.lon}&current_weather=true`)
+              .then(r => r.json()).then(data => { climaAtual = data.current_weather; atualizarPainelFrontEnd(); }).catch(e => e);
+        }
+      }, err => {
+         geo.lat = 0; geo.lon = 0;
+         const gs = document.getElementById('statusGps'); gs.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"></circle></svg> Bloqueado`; gs.style.background = "#FEE2E2"; gs.style.color = "#B91C1C";
+      }, {enableHighAccuracy: true});
+    }
+
+    function abrirModalPonto() {
+      const hoje = new Date();
+      document.getElementById('inpDataRegistro').value = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+      carregarHorariosDoDiaSelecionado();
+      document.getElementById('modalPonto').style.display = 'flex';
+    }
+    function fecharModalPonto() { document.getElementById('modalPonto').style.display = 'none'; }
+
+    function carregarHorariosDoDiaSelecionado() {
+      const dataIso = document.getElementById('inpDataRegistro').value;
+      if (!dataIso) return;
+      const [ano, mes, dia] = dataIso.split('-');
+      const dataFormatada = `${dia}/${mes}/${ano}`;
+
+      let regsDia = historicoGlobal.filter(h => h.data === dataFormatada);
+      document.getElementById('inpEntrada').value = regsDia.find(r => r.tipo === 'Entrada')?.hora || '';
+      document.getElementById('inpAlmoco').value  = regsDia.find(r => r.tipo === 'Almoço')?.hora || '';
+      document.getElementById('inpRetorno').value = regsDia.find(r => r.tipo === 'Retorno')?.hora || '';
+      document.getElementById('inpSaida').value   = regsDia.find(r => r.tipo === 'Saída Final')?.hora || '';
+    }
+
+    function formataHorasMinutos(minutos) {
+        if(minutos === null || isNaN(minutos) || minutos === undefined) return "--:--";
+        let h = Math.floor(Math.abs(minutos) / 60).toString().padStart(2, '0');
+        let m = (Math.abs(minutos) % 60).toString().padStart(2, '0');
+        return `${h}:${m}`;
+    }
+
+    function getMinutos(str) { 
+        if(!str || typeof str !== 'string' || str.trim() === '' || str.includes('-')) return null; 
+        str = str.toLowerCase().replace(/[h\.]/g, ':').replace(/[^\d:]/g, ''); 
+        if (str.endsWith(':')) str = str.slice(0, -1);
+        let p = str.split(':'); 
+        if (p.length === 2) { return (parseInt(p[0] || '0', 10) * 60) + parseInt(p[1] || '0', 10); } 
+        else if (p.length === 1 && p[0].length > 0) {
+            let nums = p[0]; 
+            if (nums.length <= 2) return parseInt(nums, 10) * 60; 
+            else return (parseInt(nums.substring(0, nums.length - 2), 10) * 60) + parseInt(nums.substring(nums.length - 2), 10);
+        }
+        return null; 
+    }
+
+    function formatarHoraString(str) {
+        let mins = getMinutos(str);
+        return mins === null ? (str || "") : formataHorasMinutos(mins);
+    }
+
+    function formatarCampo(celula) {
+        let val = celula.innerText.trim();
+        if (val !== '') {
+            let mins = getMinutos(val);
+            if (mins !== null) celula.innerText = formataHorasMinutos(mins);
+        }
+        calcularLinhaA4(celula, true);
+    }
+
+    function animarDigitacao(elemento, htmlCompleto, velocidade = 10) {
+        elemento.innerHTML = ""; elemento.classList.add('typing-cursor');
+        let i = 0; let isTag = false; let text = "";
+        function digitaLetra() {
+            if (i < htmlCompleto.length) {
+                let char = htmlCompleto.charAt(i); text += char;
+                if (char === '<') isTag = true; if (char === '>') isTag = false;
+                elemento.innerHTML = text; i++;
+                if (isTag) digitaLetra(); else setTimeout(digitaLetra, velocidade);
+            } else { elemento.classList.remove('typing-cursor'); }
+        }
+        digitaLetra();
+    }
+
+    function getProximoFeriado() {
+        if (!feriadosGlobal || feriadosGlobal.length === 0) return null;
+        let hoje = new Date(); hoje.setHours(0,0,0,0);
+        let futuros = [];
+        feriadosGlobal.forEach(f => {
+            let partes = f.data.split('/');
+            if(partes.length >= 2) {
+                let dataObj = new Date(hoje.getFullYear(), parseInt(partes[1]) - 1, parseInt(partes[0]));
+                if (dataObj < hoje) dataObj.setFullYear(hoje.getFullYear() + 1);
+                if (dataObj >= hoje) futuros.push({ dataObj, dataStr: `${partes[0]}/${partes[1]}`, nome: f.nome });
+            }
+        });
+        if (futuros.length > 0) { futuros.sort((a, b) => a.dataObj - b.dataObj); return futuros[0]; }
+        return null;
+    }
+
+   function gerarResumoTodosMeses() {
+        if (!historicoGlobal || historicoGlobal.length === 0) return "";
+        let diasMap = {};
+        historicoGlobal.forEach(r => {
+            // CORREÇÃO: Ignora itens do Firebase que não sejam datas de ponto (como as Observações)
+            if (!r.data || !r.data.includes('/')) return;
+
+            if(!diasMap[r.data]) diasMap[r.data] = {e:null, ia:null, ta:null, s:null};
+            if(r.tipo==='Entrada') diasMap[r.data].e = r.hora;
+            if(r.tipo==='Almoço') diasMap[r.data].ia = r.hora;
+            if(r.tipo==='Retorno') diasMap[r.data].ta = r.hora;
+            if(r.tipo==='Saída Final') diasMap[r.data].s = r.hora;
+        });
+
+        let mesesMap = {};
+        for(let data in diasMap) {
+            let [d, m, y] = data.split('/');
+            let mesRef = parseInt(d) >= 11 ? parseInt(m) + 1 : parseInt(m);
+            let anoRef = parseInt(y);
+            if(mesRef > 12) { mesRef = 1; anoRef++; }
+            let key = `${String(mesRef).padStart(2,'0')}/${anoRef}`;
+            if(!mesesMap[key]) mesesMap[key] = { trab: 0, saldo: 0 };
+
+            let dia = diasMap[data];
+            let e = getMinutos(dia.e); let ia = getMinutos(dia.ia); let ta = getMinutos(dia.ta); let s = getMinutos(dia.s);
+            if(e !== null && s !== null) {
+                let tempoBruto = (s < e) ? (s + 1440 - e) : (s - e);
+                let tempoPausa = (ia !== null && ta !== null) ? (ta < ia ? ta + 1440 - ia : ta - ia) : 0;
+                let minTrab = Math.max(0, tempoBruto - tempoPausa); 
+                mesesMap[key].trab += minTrab;
+                mesesMap[key].saldo += (minTrab - 480);
+            }
+        }
+
+        let chaves = Object.keys(mesesMap).sort((a,b) => (a.split('/')[1] + a.split('/')[0]).localeCompare(b.split('/')[1] + b.split('/')[0]));
+        if(chaves.length === 0) return "";
+        
+        let htmlStr = `<br><br><b style="color:var(--primary); font-size:12px; text-transform:uppercase;">📊 Balanço Geral de Horas:</b><br>`;
+        chaves.forEach(k => {
+            let sld = mesesMap[k].saldo;
+            let corSld = sld > 0 ? "var(--success)" : (sld < 0 ? "var(--danger)" : "var(--text-main)");
+            htmlStr += `<span style="display:inline-block; margin-top:4px;">• <b>Ref ${k}:</b> Trab <b>${formataHorasMinutos(mesesMap[k].trab)}</b> | Saldo <b style="color:${corSld}">${sld > 0 ? "+" : (sld < 0 ? "-" : "")}${formataHorasMinutos(sld)}</b></span><br>`;
+        });
+        return htmlStr;
+    }
+
+    function verificarPermissaoNotificacao() {
+        if (!localStorage.getItem('notif_respondido')) document.getElementById('box-notificacao').style.display = 'flex';
+    }
+
+    function tratarNotificacao(aceitou, btn) {
+        localStorage.setItem('notif_respondido', 'true');
+        if(aceitou) {
+            if ("Notification" in window) Notification.requestPermission().then(perm => { if(perm === "granted") new Notification("Ponto Laranjeiras", { body: "Ativado!" }); });
+            btn.parentElement.innerHTML = `<span style="color:var(--success); font-weight:700; font-size:13px;">✓ Notificações Ativadas</span>`;
+        } else {
+            btn.parentElement.innerHTML = `<span style="color:var(--text-muted); font-weight:600; font-size:13px;">Dispensado</span>`;
+        }
+        setTimeout(() => document.getElementById('box-notificacao').style.display = 'none', 2000);
+    }
+
+    function atualizarPainelFrontEnd() {
+        let hojeStr = new Date().toLocaleDateString('pt-BR'); let regHoje = historicoGlobal.filter(h => h.data === hojeStr);
+        let ent = "--:--", alm = "--:--", ret = "--:--", sai = "--:--";
+        regHoje.forEach(r => {
+           if(r.tipo === 'Entrada') ent = r.hora; if(r.tipo === 'Almoço') alm = r.hora;
+           if(r.tipo === 'Retorno') ret = r.hora; if(r.tipo === 'Saída Final') sai = r.hora;
+        });
+
+        let horaAtual = new Date().getHours(); 
+        let saudacao = horaAtual < 12 ? "Bom dia" : (horaAtual < 18 ? "Boa tarde" : "Boa noite");
+        let textoConversa = `${saudacao}, <b>${currentUser.user.nome.split(' ')[0]}</b>. `;
+        
+        if (ent === '--:--') textoConversa += `Seu dia ainda não tem registros hoje. Clique em Abrir Painel para começar. `;
+        else {
+            textoConversa += `Entrada hoje às <b>${ent}</b>. `;
+            if (alm !== '--:--' && ret === '--:--') textoConversa += `No almoço desde às <b>${alm}</b>. `;
+            else if (alm !== '--:--' && ret !== '--:--') textoConversa += `Pausa das <b>${alm}</b> às <b>${ret}</b>. `;
+            if (sai !== '--:--') textoConversa += `Ponto encerrado às <b>${sai}</b>.`;
+        }
+
+        if (climaAtual) textoConversa += `<br><br>${climaAtual.weathercode <= 3 ? "☀️" : "☁️"} <b>Clima Local:</b> ${Math.round(climaAtual.temperature)}°C.`;
+        
+        let proxFeriado = getProximoFeriado();
+        if (proxFeriado) textoConversa += `<br><br>🎉 <b>Lembrete:</b> Próximo descanso será dia <b>${proxFeriado.dataStr}</b> (${proxFeriado.nome}).`;
+
+        textoConversa += gerarResumoTodosMeses();
+        animarDigitacao(document.getElementById('msg-conversa'), textoConversa, 8);
+        verificarPermissaoNotificacao();
+    }
+
+    function salvarFolhaA4(silencioso = false) {
+        const valMes = document.getElementById('tradMesData').value; if(!valMes) return;
+        let edicoes = {}; let partesMes = valMes.split('-'); let ano = parseInt(partesMes[0]); let mesInt = parseInt(partesMes[1]);
+
+        document.querySelectorAll('#folha-a4-render tr').forEach(tr => {
+            let td = tr.querySelector('.td-edit'); if(!td) return; let dia = td.getAttribute('data-dia');
+            let e = tr.querySelector('[data-col="e"]')?.innerText.trim() || ''; let ia = tr.querySelector('[data-col="ia"]')?.innerText.trim() || '';
+            let ta = tr.querySelector('[data-col="ta"]')?.innerText.trim() || ''; let s = tr.querySelector('[data-col="s"]')?.innerText.trim() || '';
+            
+            edicoes[dia] = {e, ia, ta, s};
+            let mesDoDia = (parseInt(dia) > 10) ? mesInt - 1 : mesInt; let anoDoDia = ano; if(mesDoDia === 0) { mesDoDia = 12; anoDoDia--; }
+            let dataFormatada = `${dia}/${String(mesDoDia).padStart(2,'0')}/${anoDoDia}`;
+
+            historicoGlobal = historicoGlobal.filter(h => h.data !== dataFormatada);
+            if(e) historicoGlobal.push({ data: dataFormatada, hora: e, tipo: 'Entrada' });
+            if(ia) historicoGlobal.push({ data: dataFormatada, hora: ia, tipo: 'Almoço' });
+            if(ta) historicoGlobal.push({ data: dataFormatada, hora: ta, tipo: 'Retorno' });
+            if(s) historicoGlobal.push({ data: dataFormatada, hora: s, tipo: 'Saída Final' });
+        });
+
+        let obsBox = document.querySelector('.obs-edit');
+        if(obsBox) { edicoes["_obs"] = obsBox.innerText; }
+
+        localStorage.setItem('folhaManual_' + currentUser.loginID + '_' + valMes, JSON.stringify(edicoes));
+        atualizarPainelFrontEnd(); 
+        if(!silencioso) abrirModal("Sincronizado", "Edições salvas na tela localmente!", "sucesso");
+    }
+
+    function calcularLinhaA4(celulaEditada, requiresSave = true) {
+        let tr = celulaEditada.parentElement;
+        let e = getMinutos(tr.querySelector('[data-col="e"]')?.innerText.trim() || ''); 
+        let ia = getMinutos(tr.querySelector('[data-col="ia"]')?.innerText.trim() || '');
+        let ta = getMinutos(tr.querySelector('[data-col="ta"]')?.innerText.trim() || ''); 
+        let s = getMinutos(tr.querySelector('[data-col="s"]')?.innerText.trim() || '');
+        let tdTotal = tr.querySelector('.td-total'); let tdSaldo = tr.querySelector('.td-saldo'); let tdAss = tr.querySelector('.td-ass'); 
+        
+        if(!tdTotal) return;
+        if(e !== null && s !== null) {
+            let tempoBruto = (s < e) ? (s + 1440 - e) : (s - e);
+            let tempoPausa = (ia !== null && ta !== null) ? (ta < ia ? ta + 1440 - ia : ta - ia) : 0;
+            let minTrab = Math.max(0, tempoBruto - tempoPausa); 
+            
+            tdTotal.innerText = formataHorasMinutos(minTrab); tdTotal.setAttribute('data-minutos', minTrab);
+            let saldoDia = minTrab - 480;
+            tdSaldo.innerText = (saldoDia > 0 ? "+" : (saldoDia < 0 ? "-" : "")) + formataHorasMinutos(saldoDia);
+            tdSaldo.style.color = saldoDia > 0 ? 'var(--success)' : (saldoDia < 0 ? 'var(--danger)' : 'var(--text-main)');
+            tdSaldo.setAttribute('data-saldo', saldoDia);
+        } else { tdTotal.innerText = ""; tdTotal.removeAttribute('data-minutos'); tdSaldo.innerText = ""; tdSaldo.removeAttribute('data-saldo'); }
+
+        if (tdAss) tdAss.innerHTML = (e !== null && s !== null && currentUser.user.assinatura) ? `<img src="${currentUser.user.assinatura}" style="max-height: 20px; vertical-align: middle;">` : "";
+        calcularTotalFolhaA4(); if(requiresSave) salvarFolhaA4(true);
+    }
+
+    function calcularTotalFolhaA4() {
+        let somaTrabalhado = 0; let somaSaldo = 0; let diasTrabalhados = 0;
+        document.querySelectorAll('#folha-a4-render .td-total').forEach(td => { let mins = td.getAttribute('data-minutos'); if(mins) { somaTrabalhado += parseInt(mins, 10); diasTrabalhados++; } });
+        document.querySelectorAll('#folha-a4-render .td-saldo').forEach(td => { let sld = td.getAttribute('data-saldo'); if(sld) somaSaldo += parseInt(sld, 10); });
+        
+        let eGeral = document.getElementById('resumo-total'); let eDias = document.getElementById('resumo-dias'); let eSaldo = document.getElementById('resumo-saldo');
+        if(eGeral) eGeral.innerText = formataHorasMinutos(somaTrabalhado); if(eDias) eDias.innerText = diasTrabalhados + " DIAS";
+        if(eSaldo) { eSaldo.innerText = (somaSaldo > 0 ? "+" : (somaSaldo < 0 ? "-" : "")) + formataHorasMinutos(somaSaldo); eSaldo.style.color = somaSaldo > 0 ? 'var(--success)' : (somaSaldo < 0 ? 'var(--danger)' : '#0F172A'); }
+    }
+
+    function gerarFolhaTradicional() {
+      if(!currentUser) return;
+      const valMes = document.getElementById('tradMesData').value; if(!valMes) return;
+      let [ano, mes] = valMes.split('-'); ano = parseInt(ano); mes = parseInt(mes);
+      let prevMes = mes === 1 ? 12 : mes - 1; let prevAno = mes === 1 ? ano - 1 : ano;
+
+      const dataInicio = new Date(prevAno, prevMes - 1, 11); const dataFim = new Date(ano, mes - 1, 10);
+      let edicoesSalvas = JSON.parse(localStorage.getItem('folhaManual_' + currentUser.loginID + '_' + valMes)) || {};
+      let horarioOficial = currentUser.loginID.match(/karina|alane/) ? "08h - 17h" : "07h - 16h"; 
+      let tagAssinatura = currentUser.user.assinatura ? `<img src="${currentUser.user.assinatura}" style="max-height: 20px; vertical-align: middle;">` : "";
+
+      let html = `<div class="folha-container">
+        <div class="doc-header">
+           <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Bras%C3%A3o_de_Caieiras.svg/500px-Bras%C3%A3o_de_Caieiras.svg.png" style="filter:grayscale(100%);">
+           <div class="doc-header-text">
+             <h2>Secretaria de Saúde</h2><p>Av. Prof. Carvalho Pinto, 207 - Centro - Caieiras</p>
+           </div>
+        </div>
+        
+        <div class="doc-info">
+          <b>Servidor:</b> ${currentUser.user.nome.toUpperCase()} <br>
+          <b>Cargo:</b> ${currentUser.user.cargo.toUpperCase()} &nbsp;|&nbsp; <b>Horário:</b> ${horarioOficial}<br>
+          <b>Período:</b> 11/${String(prevMes).padStart(2,'0')}/${prevAno} a 10/${String(mes).padStart(2,'0')}/${ano}
+        </div>
+        
+        <table class="tabela-espelho">
+          <tr><th>DIA</th><th>ENT</th><th>ALM</th><th>RET</th><th>SAÍ</th><th>TRAB</th><th>SALDO</th><th>ASS</th></tr>`;
+
+      let curDate = new Date(dataInicio);
+      while(curDate <= dataFim) {
+        let diaNum = ('0' + curDate.getDate()).slice(-2); 
+        let mesNum = ('0' + (curDate.getMonth() + 1)).slice(-2);
+        let dataIsoFormatada = `${diaNum}/${mesNum}/${curDate.getFullYear()}`; 
+        
+        let regsDia = historicoGlobal.filter(h => h.data === dataIsoFormatada); 
+        let e='', ia='', ta='', s='', folga=false;
+        
+        regsDia.forEach(r => {
+          if(r.tipo === 'Entrada') e = r.hora; if(r.tipo === 'Almoço') ia = r.hora;
+          if(r.tipo === 'Retorno') ta = r.hora; if(r.tipo === 'Saída Final') s = r.hora; if(r.tipo === 'Folga') folga = true;
+        });
+
+        let finalE = formatarHoraString(edicoesSalvas[diaNum]?.e !== undefined ? edicoesSalvas[diaNum].e : e); 
+        let finalIa = formatarHoraString(edicoesSalvas[diaNum]?.ia !== undefined ? edicoesSalvas[diaNum].ia : ia);
+        let finalTa = formatarHoraString(edicoesSalvas[diaNum]?.ta !== undefined ? edicoesSalvas[diaNum].ta : ta); 
+        let finalS = formatarHoraString(edicoesSalvas[diaNum]?.s !== undefined ? edicoesSalvas[diaNum].s : s);
+        let finalAss = (finalE !== '' && finalS !== '') ? tagAssinatura : '';
+
+        if(folga) html += `<tr class="tr-folga"><td style="font-weight:bold;">${diaNum}/${mesNum}</td><td colspan="6">F O L G A / F E R I A D O</td><td class="td-ass"></td></tr>`;
+        else if(curDate.getDay() === 0 || curDate.getDay() === 6) html += `<tr class="tr-ds"><td style="font-weight:bold;">${diaNum}/${mesNum}</td><td colspan="6" style="text-align:left; padding-left:15px;">${curDate.getDay() === 0 ? "DOMINGO" : "SÁBADO"}</td><td class="td-ass"></td></tr>`;
+        else {
+          html += `<tr><td style="font-weight:bold; font-size:11px;">${diaNum}/${mesNum}</td>
+            <td class="td-edit" contenteditable="plaintext-only" inputmode="numeric" data-dia="${diaNum}" data-col="e" oninput="calcularLinhaA4(this, true)" onblur="formatarCampo(this)">${finalE}</td>
+            <td class="td-edit" contenteditable="plaintext-only" inputmode="numeric" data-dia="${diaNum}" data-col="ia" oninput="calcularLinhaA4(this, true)" onblur="formatarCampo(this)">${finalIa}</td>
+            <td class="td-edit" contenteditable="plaintext-only" inputmode="numeric" data-dia="${diaNum}" data-col="ta" oninput="calcularLinhaA4(this, true)" onblur="formatarCampo(this)">${finalTa}</td>
+            <td class="td-edit" contenteditable="plaintext-only" inputmode="numeric" data-dia="${diaNum}" data-col="s" oninput="calcularLinhaA4(this, true)" onblur="formatarCampo(this)">${finalS}</td>
+            <td class="td-total"></td><td class="td-saldo"></td><td class="td-ass" style="vertical-align:middle; text-align:center;">${finalAss}</td></tr>`;
+        }
+        curDate.setDate(curDate.getDate() + 1);
+      }
+
+      // NOVIDADE: Busca a anotação salva no Firebase e exibe na tela
+      let obsDoFirebase = historicoGlobal.find(h => h.tipo === 'ObservacaoMensal' && h.mesAno === valMes)?.texto || "";
+      let obsSalvas = edicoesSalvas["_obs"] !== undefined ? edicoesSalvas["_obs"] : obsDoFirebase;
+
+      html += `</table>
+        <div class="resumo-espelho">
+          <div class="box-resumo"><span>TRABALHADO</span><b id="resumo-total">--:--</b></div>
+          <div class="box-resumo"><span>PRESENÇA</span><b id="resumo-dias">0 DIAS</b></div>
+          <div class="box-resumo"><span>SALDO MENSAL</span><b id="resumo-saldo">--:--</b></div>
+        </div>
+        
+        <div class="doc-obs">
+          <div class="doc-obs-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            Observações e Atestados
+          </div>
+          <div class="obs-edit" contenteditable="plaintext-only" oninput="salvarFolhaA4(true)">${obsSalvas}</div>
+        </div>
+
+        <div style="margin-top: 40px; text-align: center;">
+          ${currentUser.user.assinatura ? `<img src="${currentUser.user.assinatura}" style="height: 55px; margin-bottom: -15px;">` : `<br><br><br>`}
+          <div style="border-top: 1px solid #000; width: 300px; margin: 0 auto; padding-top: 5px; font-size: 12px; color:#000;">
+            <b>${currentUser.user.nome.toUpperCase()}</b><br>Assinatura do Servidor(a)
+          </div>
+        </div>
+      </div>`;
+      
+      document.getElementById('folha-a4-render').innerHTML = html;
+      document.querySelectorAll('#folha-a4-render .td-edit[data-col="e"]').forEach(td => calcularLinhaA4(td, false));
+    }
+
+    // Oculta a conversa ao rolar a página
+    window.addEventListener('scroll', () => {
+      const chatBubble = document.querySelector('.chat-bubble');
+      if (window.scrollY > 50 && chatBubble && chatBubble.hasAttribute('open')) {
+        chatBubble.removeAttribute('open');
+      }
+    });
+  
+    // EXPORTANDO FUNÇÕES PARA O HTML
+    window.fazerLogin = fazerLogin;
+    window.abrirModalPonto = abrirModalPonto;
+    window.fecharModalPonto = fecharModalPonto;
+    window.carregarHorariosDoDiaSelecionado = carregarHorariosDoDiaSelecionado;
+    window.salvarHorariosLote = salvarHorariosLote;
+    window.tratarNotificacao = tratarNotificacao;
+    window.salvarFolhaA4 = salvarFolhaA4;
+    window.calcularLinhaA4 = calcularLinhaA4;
+    window.formatarCampo = formatarCampo;
+    window.gerarFolhaTradicional = gerarFolhaTradicional;
+    window.sincronizarComNuvem = sincronizarComNuvem;
+
+    // --- SISTEMA DE DESPERTADOR / NOTIFICAÇÕES REAIS ---
+    let ultimaNotificacaoEnviada = ""; // Evita mandar a mesma notificação repetida no mesmo minuto
+
+    function checarDespertador() {
+        if (!currentUser || Notification.permission !== "granted") return;
+
+        const agora = new Date();
+        const hora = String(agora.getHours()).padStart(2, '0');
+        const min = String(agora.getMinutes()).padStart(2, '0');
+        const horaAtualStr = `${hora}:${min}`;
+        const diaSemana = agora.getDay();
+
+        // Não apita de final de semana
+        if (diaSemana === 0 || diaSemana === 6) return;
+
+        // Horários dependendo do usuário (Karina/Alane vs Outros)
+        const isHorarioTarde = currentUser.loginID.match(/karina|alane/);
+
+        let mensagens = {};
+
+        if (isHorarioTarde) {
+            // Horários para quem trabalha 08h - 17h
+            mensagens = {
+                "07:55": "Bom dia! Quase na hora de registrar sua entrada (08h).",
+                "12:00": "Hora do almoço! Não se esqueça de registrar a saída.",
+                "13:00": "Fim do almoço! Registre seu retorno.",
+                "17:00": "Fim de expediente! Registre sua saída final."
+            };
+        } else {
+            // Horários padrão 07h - 16h
+            mensagens = {
+                "06:55": "Bom dia! Quase na hora de registrar sua entrada (07h).",
+                "12:00": "Hora do almoço! Não se esqueça de registrar a saída.",
+                "13:00": "Fim do almoço! Registre seu retorno.",
+                "16:00": "Fim de expediente! Registre sua saída final."
+            };
+        }
+
+        // Se a hora atual bate com algum alarme e ainda não enviamos essa notificação
+        if (mensagens[horaAtualStr] && ultimaNotificacaoEnviada !== horaAtualStr) {
+            enviarNotificacaoReal("Ponto Laranjeiras", mensagens[horaAtualStr]);
+            ultimaNotificacaoEnviada = horaAtualStr; // Marca que já enviou
+        }
+        
+        // Limpa a memória à meia-noite para o dia seguinte
+        if (horaAtualStr === "00:00") ultimaNotificacaoEnviada = "";
+    }
+
+    function enviarNotificacaoReal(titulo, corpo) {
+        if (Notification.permission === "granted") {
+            try {
+                // Tenta usar ServiceWorker (Melhor para Celular/PWA)
+                navigator.serviceWorker.getRegistration().then(function(reg) {
+                    if (reg) {
+                        reg.showNotification(titulo, {
+                            body: corpo,
+                            icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Bras%C3%A3o_de_Caieiras.svg/192px-Bras%C3%A3o_de_Caieiras.svg.png",
+                            vibrate: [200, 100, 200], // Vibração padrão
+                            requireInteraction: true // A notificação fica na tela até clicar
+                        });
+                    } else {
+                        // Se não tiver ServiceWorker, tenta a notificação padrão web
+                        new Notification(titulo, { body: corpo, icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Bras%C3%A3o_de_Caieiras.svg/192px-Bras%C3%A3o_de_Caieiras.svg.png" });
+                    }
+                });
+            } catch (e) {
+                // Fallback de segurança
+                new Notification(titulo, { body: corpo });
+            }
+        }
+    }
+
+    // Inicia o "Relógio" do sistema: ele checa a hora a cada 30 segundos
+    setInterval(checarDespertador, 30000);
+  </script>
+</body>
+</html>
