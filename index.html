@@ -524,12 +524,21 @@
       })
       .then(r => r.json())
       .then(res => {
-        // 🔴 NOVO: Agora verificamos se o token criptografado veio na resposta
+
+        // Se o Google Apps Script der erro, mostra na tela!
+        if(res.erro) {
+            ocultarLoader();
+            err.innerText = "ERRO NO SERVIDOR: " + res.erro; 
+            err.style.display = 'block';
+            return;
+        }
+
+        // Verifica se o Apps Script autorizou e mandou o token
         if(res.autorizado && res.firebaseToken) {
           
           mostrarLoader("VALIDANDO SEGURANÇA...");
           
-          // 🔴 NOVO: Faz login oficial no Firebase usando o token do Apps Script
+          // Faz login oficial no Firebase usando o token do Apps Script
           signInWithCustomToken(auth, res.firebaseToken)
             .then((userCredential) => {
               currentUser = res; 
