@@ -409,6 +409,8 @@
     // IMPORTAÇÕES DO STORAGE PARA OS ATESTADOS
     import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 
+    import { getAuth, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyDrcb9hOtTIcDwb96WxfQ_Nu8hCoOH6-o8",
       authDomain: "corepontomoderno.firebaseapp.com",
@@ -422,6 +424,7 @@
     const app = initializeApp(firebaseConfig);
     const database = getDatabase(app);
     const storage = getStorage(app); 
+    const auth = getAuth(app);
 
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz2C7CMDee5LlUPCkYzTcEMjuWd-DzztpLIvQyi7h02nfI_2lmRr2gZcMCiDpzDelrP/exec"; 
 
@@ -521,21 +524,35 @@
       })
       .then(r => r.json())
       .then(res => {
-        if(res.autorizado) {
-          currentUser = res; 
-          currentUser.loginID = login;
+        // 🔴 NOVO: Agora verificamos se o token criptografado veio na resposta
+        if(res.autorizado && res.firebaseToken) {
           
-          document.getElementById('login-screen').style.display = 'none'; 
-          document.getElementById('main-content').style.display = 'block';
+          mostrarLoader("VALIDANDO SEGURANÇA...");
           
-          let nomes = currentUser.user.nome.split(' ');
-          let iniciais = nomes[0].charAt(0).toUpperCase() + (nomes.length > 1 ? nomes[nomes.length-1].charAt(0).toUpperCase() : '');
-          document.getElementById('userAvatar').innerText = iniciais;
-          document.getElementById('userName').innerText = nomes[0] + (nomes.length > 1 ? ' ' + nomes[nomes.length-1] : ''); 
-          
-          carregarHistorico(); 
-          iniciarGps(); 
-          ocultarLoader();
+          // 🔴 NOVO: Faz login oficial no Firebase usando o token do Apps Script
+          signInWithCustomToken(auth, res.firebaseToken)
+            .then((userCredential) => {
+              currentUser = res; 
+              currentUser.loginID = login;
+              
+              document.getElementById('login-screen').style.display = 'none'; 
+              document.getElementById('main-content').style.display = 'block';
+              
+              let nomes = currentUser.user.nome.split(' ');
+              let iniciais = nomes[0].charAt(0).toUpperCase() + (nomes.length > 1 ? nomes[nomes.length-1].charAt(0).toUpperCase() : '');
+              document.getElementById('userAvatar').innerText = iniciais;
+              document.getElementById('userName').innerText = nomes[0] + (nomes.length > 1 ? ' ' + nomes[nomes.length-1] : ''); 
+              
+              carregarHistorico(); 
+              iniciarGps(); 
+            })
+            .catch((error) => {
+              ocultarLoader();
+              console.error("Erro Firebase Auth:", error);
+              err.innerText = "Erro ao conectar com banco de dados seguro."; 
+              err.style.display = 'block';
+            });
+
         } else {
           ocultarLoader();
           err.innerText = "Credenciais incorretas!"; 
