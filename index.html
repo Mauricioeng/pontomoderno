@@ -409,7 +409,7 @@
     // IMPORTAÇÕES DO STORAGE PARA OS ATESTADOS
     import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 
-    import { getAuth, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+   import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDrcb9hOtTIcDwb96WxfQ_Nu8hCoOH6-o8",
@@ -426,7 +426,15 @@
     const storage = getStorage(app); 
     const auth = getAuth(app);
 
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxwdersU2Q6D6TKOD_oLBSUhBLQ4uM7Vr1srueakqP4PXLzHY7Syz87bzEXDO2E2ZQe/exec"; 
+   const METADADOS_USUARIOS = {
+      "karina@ubs.com": { nome: "Karina Braz", cargo: "AUX Administrativo", assinatura: "https://i.imgur.com/iNsPDQY.png" },
+      "alane@ubs.com": { nome: "Alane de Carvalho Gomes", cargo: "AUX Administrativo", assinatura: "https://i.imgur.com/HWvmogQ.png" },
+      "admin@ubs.com": { nome: "Maurício Matheus Dias Oliveira", cargo: "ADMINISTRADOR", assinatura: "" },
+      "joyce@ubs.com": { nome: "Joyce Cristina de Queiroz Trevizan", cargo: "Agente de Saúde", assinatura: "https://i.imgur.com/B5m9EjQ.png" },
+      "sara@ubs.com": { nome: "Sara Roberta Cruz Pereira", cargo: "Coordenadora", assinatura: "https://i.imgur.com/jYZkjOu.png" },
+      "franciele@ubs.com": { nome: "Franciele Aparecida Bernardino da Silva", cargo: "Administrativo", assinatura: "https://i.imgur.com/QWrlMtt.png" }
+    };
+    const UBS_GEO = { lat: -23.3951488, lon: -46.7158221 };
 
     const FERIADOS_2026 = [
       { data: "01/01/2026", nome: "Confraternização Universal" }, 
@@ -509,68 +517,47 @@
     }
 
     function fazerLogin() {
-      const login = document.getElementById('lUser').value.trim().toLowerCase(); 
+      let login = document.getElementById('lUser').value.trim().toLowerCase(); 
       const senha = document.getElementById('lPass').value.trim();
       const err = document.getElementById('loginError');
       if(!login || !senha) return;
       
+      // Truque: Injeta o domínio de email padrão se a pessoa digitar só o nome
+      let emailLogin = login.includes('@') ? login : login + '@ubs.com';
+
       err.style.display = 'none';
-      mostrarLoader("AUTENTICANDO...");
+      mostrarLoader("AUTENTICANDO NO FIREBASE...");
       
-      fetch(WEB_APP_URL, { 
-        method: "POST", 
-        headers: { "Content-Type": "text/plain;charset=utf-8" }, 
-        body: JSON.stringify({ acao: "login", login: login, senha: senha })
-      })
-      .then(r => r.json())
-      .then(res => {
+      signInWithEmailAndPassword(auth, emailLogin, senha)
+        .then((userCredential) => {
+          const emailLogado = userCredential.user.email;
+          const metadados = METADADOS_USUARIOS[emailLogado] || { nome: "Servidor(a)", cargo: "Colaborador", assinatura: "" };
 
-        // Se o Google Apps Script der erro, mostra na tela!
-        if(res.erro) {
-            ocultarLoader();
-            err.innerText = "ERRO NO SERVIDOR: " + res.erro; 
-            err.style.display = 'block';
-            return;
-        }
-
-        // Verifica se o Apps Script autorizou e mandou o token
-        if(res.autorizado && res.firebaseToken) {
+          // Reconstrói o currentUser para manter compatibilidade com seus dados antigos
+          currentUser = {
+            autorizado: true,
+            loginID: emailLogado.split('@')[0], // Corta o "@ubs.com" para manter a pasta "karina"
+            user: metadados,
+            ubsGeo: UBS_GEO
+          };
           
-          mostrarLoader("VALIDANDO SEGURANÇA...");
+          document.getElementById('login-screen').style.display = 'none'; 
+          document.getElementById('main-content').style.display = 'block';
           
-          // Faz login oficial no Firebase usando o token do Apps Script
-          signInWithCustomToken(auth, res.firebaseToken)
-            .then((userCredential) => {
-              currentUser = res; 
-              currentUser.loginID = login;
-              
-              document.getElementById('login-screen').style.display = 'none'; 
-              document.getElementById('main-content').style.display = 'block';
-              
-              let nomes = currentUser.user.nome.split(' ');
-              let iniciais = nomes[0].charAt(0).toUpperCase() + (nomes.length > 1 ? nomes[nomes.length-1].charAt(0).toUpperCase() : '');
-              document.getElementById('userAvatar').innerText = iniciais;
-              document.getElementById('userName').innerText = nomes[0] + (nomes.length > 1 ? ' ' + nomes[nomes.length-1] : ''); 
-              
-              carregarHistorico(); 
-              iniciarGps(); 
-            })
-            .catch((error) => {
-              ocultarLoader();
-              console.error("Erro Firebase Auth:", error);
-              err.innerText = "Erro ao conectar com banco de dados seguro."; 
-              err.style.display = 'block';
-            });
-
-        } else {
+          let nomes = currentUser.user.nome.split(' ');
+          let iniciais = nomes[0].charAt(0).toUpperCase() + (nomes.length > 1 ? nomes[nomes.length-1].charAt(0).toUpperCase() : '');
+          document.getElementById('userAvatar').innerText = iniciais;
+          document.getElementById('userName').innerText = nomes[0] + (nomes.length > 1 ? ' ' + nomes[nomes.length-1] : ''); 
+          
+          carregarHistorico(); 
+          iniciarGps(); 
+        })
+        .catch((error) => {
           ocultarLoader();
-          err.innerText = "Credenciais incorretas!"; 
+          console.error("Erro Auth:", error.code);
+          err.innerText = "Usuário ou senha incorretos!"; 
           err.style.display = 'block';
-        }
-      }).catch(e => { 
-          ocultarLoader();
-          err.innerText = "Erro na rede. Verifique a internet."; err.style.display='block'; 
-      });
+        });
     }
 
     function carregarHistorico() {
