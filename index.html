@@ -533,10 +533,11 @@
           const emailLogado = userCredential.user.email;
           const metadados = METADADOS_USUARIOS[emailLogado] || { nome: "Servidor(a)", cargo: "Colaborador", assinatura: "" };
 
-          // Reconstrói o currentUser para manter compatibilidade com seus dados antigos
+          // Substitua o bloco do currentUser atual por este:
           currentUser = {
             autorizado: true,
-            loginID: emailLogado.split('@')[0], // Corta o "@ubs.com" para manter a pasta "karina"
+            loginID: emailLogado.split('@')[0], // Mantemos isso apenas para exibição
+            uid: userCredential.user.uid,       // A CHAVE MESTRA PARA O FIREBASE!
             user: metadados,
             ubsGeo: UBS_GEO
           };
@@ -562,7 +563,7 @@
 
     function carregarHistorico() {
       mostrarLoader("CARREGANDO HISTÓRICO...");
-      get(ref(database, `historico/${currentUser.loginID}`)).then((snapshot) => {
+      get(ref(database, `historico/${currentUser.uid}`)).then((snapshot) => {
           historicoGlobal = [];
           if (snapshot.exists()) {
               snapshot.forEach((childSnapshot) => {
@@ -586,7 +587,7 @@
             mostrarLoader("SALVANDO NA NUVEM...");
             
             try {
-                await set(ref(database, `historico/${currentUser.loginID}/CONFIG_ANIVERSARIO`), {
+                await set(ref(database, `historico/${currentUser.uid}/CONFIG_ANIVERSARIO`), {
                     tipo: 'Config',
                     chave: 'aniversario',
                     valor: val
@@ -883,7 +884,7 @@
                     dataHoraDispositivo: dataHoraDispositivo,
                     obs: geo.ok ? `Registrado via App em ${dataHoraDispositivo} (Local)` : `Registrado via App em ${dataHoraDispositivo} (Fora)`
                 };
-                promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebase}`), obj));
+                promises.push(set(ref(database, `historico/${currentUser.uid}/${chaveFirebase}`), obj));
                 novosRegistros++;
             }
         }
@@ -935,11 +936,11 @@
                     let registroAntigo = historicoGlobal.find(h => h.data === dataFormatada && h.tipo === item.tipo);
 
                     if (valorEditado === "") {
-                        if (registroAntigo) promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebase}`), null));
+                        if (registroAntigo) promises.push(set(ref(database, `historico/${currentUser.uid}/${chaveFirebase}`), null));
                     } else {
                         if (!registroAntigo || registroAntigo.hora !== valorEditado) {
                             let payload = { usuario: currentUser.user.nome, data: dataFormatada, hora: valorEditado, tipo: item.tipo, noLocal: geo.ok, dataHoraDispositivo: dataHoraDispositivo, obs: `AutoSave Espelho em ${dataHoraDispositivo}` };
-                            promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebase}`), payload));
+                            promises.push(set(ref(database, `historico/${currentUser.uid}/${chaveFirebase}`), payload));
                         }
                     }
                 }
@@ -950,14 +951,14 @@
             let obsAntiga = historicoGlobal.find(h => h.tipo === 'ObservacaoMensal' && h.mesAno === valMes)?.texto || "";
             if (edicoesSalvas['_obs'] !== obsAntiga) {
                 let chaveFirebaseObs = `OBS_MENSAL_${valMes}`;
-                promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebaseObs}`), { tipo: 'ObservacaoMensal', mesAno: valMes, texto: edicoesSalvas['_obs'] }));
+                promises.push(set(ref(database, `historico/${currentUser.uid}/${chaveFirebaseObs}`), { tipo: 'ObservacaoMensal', mesAno: valMes, texto: edicoesSalvas['_obs'] }));
             }
         }
 
         try {
             if(promises.length > 0) {
                 await Promise.all(promises);
-                get(ref(database, `historico/${currentUser.loginID}`)).then((snapshot) => {
+                get(ref(database, `historico/${currentUser.uid}`)).then((snapshot) => {
                     historicoGlobal = [];
                     if (snapshot.exists()) { snapshot.forEach((childSnapshot) => { historicoGlobal.push(childSnapshot.val()); }); }
                 });
@@ -1212,14 +1213,14 @@
         mostrarLoader("ENVIANDO ATESTADO PARA A NUVEM...");
 
         const nomeArquivo = `Atestado_${Date.now()}_${file.name}`;
-        const caminhoStorage = `laranjeiras/${currentUser.loginID}/${valMes}/${nomeArquivo}`;
+        const caminhoStorage = `laranjeiras/${currentUser.uid}/${valMes}/${nomeArquivo}`;
         const storageRef = sRef(storage, caminhoStorage);
 
         try {
             const uploadTask = await uploadBytesResumable(storageRef, file);
             const downloadURL = await getDownloadURL(uploadTask.ref);
             const idAnexoNoBanco = `ANEXO_${Date.now()}`;
-            const refBanco = ref(database, `anexos/${currentUser.loginID}/${valMes}/${idAnexoNoBanco}`);
+            const refBanco = ref(database, `anexos/${currentUser.uid}/${valMes}/${idAnexoNoBanco}`);
             
             await set(refBanco, {
                 nomeOriginal: file.name,
@@ -1249,7 +1250,7 @@
             const refDoArquivo = sRef(storage, caminhoDoStorage);
             await deleteObject(refDoArquivo);
 
-            const refDoBanco = ref(database, `anexos/${currentUser.loginID}/${valMes}/${idDoAnexo}`);
+            const refDoBanco = ref(database, `anexos/${currentUser.uid}/${valMes}/${idDoAnexo}`);
             await set(refDoBanco, null);
 
             ocultarLoader();
@@ -1266,7 +1267,7 @@
       if(!currentUser) return;
       const valMes = document.getElementById('tradMesData').value; if(!valMes) return;
       
-      get(ref(database, `anexos/${currentUser.loginID}/${valMes}`)).then((snapshot) => {
+      get(ref(database, `anexos/${currentUser.uid}/${valMes}`)).then((snapshot) => {
           anexosDoMesGlobais = [];
           if (snapshot.exists()) {
               snapshot.forEach((childSnapshot) => {
