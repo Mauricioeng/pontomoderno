@@ -423,14 +423,7 @@
     const storage = getStorage(app); 
     const auth = getAuth(app);
 
-    const METADADOS_USUARIOS = {
-      "karina@ubs.com": { nome: "Karina Braz", cargo: "AUX Administrativo", assinatura: "https://i.imgur.com/iNsPDQY.png" },
-      "alane@ubs.com": { nome: "Alane de Carvalho Gomes", cargo: "AUX Administrativo", assinatura: "https://i.imgur.com/HWvmogQ.png" },
-      "admin@ubs.com": { nome: "Maurício Matheus Dias Oliveira", cargo: "ADMINISTRADOR", assinatura: "" },
-      "joyce@ubs.com": { nome: "Joyce Cristina de Queiroz Trevizan", cargo: "Agente de Saúde", assinatura: "https://i.imgur.com/B5m9EjQ.png" },
-      "sara@ubs.com": { nome: "Sara Roberta Cruz Pereira", cargo: "Coordenadora", assinatura: "https://i.imgur.com/jYZkjOu.png" },
-      "franciele@ubs.com": { nome: "Franciele Aparecida Bernardino da Silva", cargo: "Administrativo", assinatura: "https://i.imgur.com/QWrlMtt.png" }
-    };
+    
     const UBS_GEO = { lat: -23.3951488, lon: -46.7158221 };
 
     const FERIADOS_2026 = [
@@ -520,32 +513,50 @@
       if(!login || !senha) return;
       
       let emailLogin = login.includes('@') ? login : login + '@ubs.com';
+      let loginID = login.includes('@') ? login.split('@')[0] : login;
 
       err.style.display = 'none';
       mostrarLoader("AUTENTICANDO NO FIREBASE...");
       
       signInWithEmailAndPassword(auth, emailLogin, senha)
-        .then((userCredential) => {
-          const emailLogado = userCredential.user.email;
-          const metadados = METADADOS_USUARIOS[emailLogado] || { nome: "Servidor(a)", cargo: "Colaborador", assinatura: "" };
+        .then(async (userCredential) => {
+          
+          mostrarLoader("BUSCANDO PERFIL DO SERVIDOR...");
+          
+          try {
+              // 1. Busca os metadados dessa pessoa específica na nuvem
+              const snapshot = await get(ref(database, `usuarios/${loginID}`));
+              let metadados = { nome: "Servidor(a)", cargo: "Colaborador", assinatura: "" };
 
-          currentUser = {
-            autorizado: true,
-            loginID: emailLogado.split('@')[0], 
-            user: metadados,
-            ubsGeo: UBS_GEO
-          };
-          
-          document.getElementById('login-screen').style.display = 'none'; 
-          document.getElementById('main-content').style.display = 'block';
-          
-          let nomes = currentUser.user.nome.split(' ');
-          let iniciais = nomes[0].charAt(0).toUpperCase() + (nomes.length > 1 ? nomes[nomes.length-1].charAt(0).toUpperCase() : '');
-          document.getElementById('userAvatar').innerText = iniciais;
-          document.getElementById('userName').innerText = nomes[0] + (nomes.length > 1 ? ' ' + nomes[nomes.length-1] : ''); 
-          
-          carregarHistorico(); 
-          iniciarGps(); 
+              if (snapshot.exists()) {
+                  metadados = snapshot.val();
+              }
+
+              // 2. Monta o usuário logado com as informações que vieram do banco
+              currentUser = {
+                autorizado: true,
+                loginID: loginID, 
+                user: metadados,
+                ubsGeo: UBS_GEO
+              };
+              
+              document.getElementById('login-screen').style.display = 'none'; 
+              document.getElementById('main-content').style.display = 'block';
+              
+              let nomes = currentUser.user.nome.split(' ');
+              let iniciais = nomes[0].charAt(0).toUpperCase() + (nomes.length > 1 ? nomes[nomes.length-1].charAt(0).toUpperCase() : '');
+              document.getElementById('userAvatar').innerText = iniciais;
+              document.getElementById('userName').innerText = nomes[0] + (nomes.length > 1 ? ' ' + nomes[nomes.length-1] : ''); 
+              
+              carregarHistorico(); 
+              iniciarGps(); 
+
+          } catch (erroBusca) {
+              ocultarLoader();
+              console.error("Erro ao puxar dados:", erroBusca);
+              abrirModal("Erro", "Sua conta foi validada, mas houve um erro ao baixar seu perfil da nuvem.", "erro");
+          }
+
         })
         .catch((error) => {
           ocultarLoader();
