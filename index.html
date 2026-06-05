@@ -405,11 +405,8 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
-    
-    // IMPORTAÇÕES DO STORAGE PARA OS ATESTADOS
     import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
-
-   import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDrcb9hOtTIcDwb96WxfQ_Nu8hCoOH6-o8",
@@ -426,7 +423,7 @@
     const storage = getStorage(app); 
     const auth = getAuth(app);
 
-   const METADADOS_USUARIOS = {
+    const METADADOS_USUARIOS = {
       "karina@ubs.com": { nome: "Karina Braz", cargo: "AUX Administrativo", assinatura: "https://i.imgur.com/iNsPDQY.png" },
       "alane@ubs.com": { nome: "Alane de Carvalho Gomes", cargo: "AUX Administrativo", assinatura: "https://i.imgur.com/HWvmogQ.png" },
       "admin@ubs.com": { nome: "Maurício Matheus Dias Oliveira", cargo: "ADMINISTRADOR", assinatura: "" },
@@ -522,7 +519,6 @@
       const err = document.getElementById('loginError');
       if(!login || !senha) return;
       
-      // Truque: Injeta o domínio de email padrão se a pessoa digitar só o nome
       let emailLogin = login.includes('@') ? login : login + '@ubs.com';
 
       err.style.display = 'none';
@@ -533,10 +529,9 @@
           const emailLogado = userCredential.user.email;
           const metadados = METADADOS_USUARIOS[emailLogado] || { nome: "Servidor(a)", cargo: "Colaborador", assinatura: "" };
 
-          // Substitua o bloco do currentUser atual por este:
           currentUser = {
             autorizado: true,
-            loginID: emailLogado.split('@')[0], // Mantemos isso apenas para exibição
+            loginID: emailLogado.split('@')[0], 
             user: metadados,
             ubsGeo: UBS_GEO
           };
@@ -562,7 +557,8 @@
 
     function carregarHistorico() {
       mostrarLoader("CARREGANDO HISTÓRICO...");
-      get(ref(database, `historico/${currentUser.uid}`)).then((snapshot) => {
+      // CORREÇÃO: Voltando para loginID
+      get(ref(database, `historico/${currentUser.loginID}`)).then((snapshot) => {
           historicoGlobal = [];
           if (snapshot.exists()) {
               snapshot.forEach((childSnapshot) => {
@@ -574,35 +570,29 @@
           ocultarLoader();
       }).catch((error) => {
           ocultarLoader();
-          abrirModal("Erro", "Não foi possível carregar os dados.", "erro");
+          abrirModal("Erro", "Não foi possível carregar os dados. Verifique a internet.", "erro");
       });
     }
 
-    // --- NOVA FUNÇÃO PARA SALVAR ANIVERSÁRIO DIRETO NO FIREBASE ---
     async function salvarAniversario() {
         let val = document.getElementById('inpAniver').value;
         if (/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])$/.test(val)) {
-            
             mostrarLoader("SALVANDO NA NUVEM...");
-            
             try {
-                await set(ref(database, `historico/${currentUser.uid}/CONFIG_ANIVERSARIO`), {
+                // CORREÇÃO: Voltando para loginID
+                await set(ref(database, `historico/${currentUser.loginID}/CONFIG_ANIVERSARIO`), {
                     tipo: 'Config',
                     chave: 'aniversario',
                     valor: val
                 });
-                
-                localStorage.setItem('aniver_' + currentUser.loginID, val); // Backup local
-                
+                localStorage.setItem('aniver_' + currentUser.loginID, val); 
                 document.getElementById('box-aniversario').style.display = 'none';
                 ocultarLoader();
-                
                 carregarHistorico(); 
             } catch (error) {
                 ocultarLoader();
                 abrirModal("Erro", "Ocorreu um problema ao salvar no servidor.", "erro");
             }
-            
         } else {
             abrirModal("Formato Inválido", "Digite uma data válida no formato DIA/MÊS (ex: 15/04).", "erro");
         }
@@ -635,7 +625,6 @@
             if (dataObj.getDay() === 6 && diasDoAno[data].trabalhou) sabadosTrabalhados++;
         }
 
-        // --- PUXANDO ANIVERSÁRIO DA NUVEM (FIREBASE) ---
         let configNiver = historicoGlobal.find(h => h && h.tipo === 'Config' && h.chave === 'aniversario');
         let niver = configNiver ? configNiver.valor : localStorage.getItem('aniver_' + currentUser.loginID);
         
@@ -815,7 +804,6 @@
             textoConversa += `<br><br>🌴 <b>Folgas/Abonadas identificadas:</b> ${diasFormatados.join(', ')}.`;
         }
 
-        // --- PUXANDO ANIVERSÁRIO DA NUVEM (FIREBASE) ---
         let configNiver = historicoGlobal.find(h => h && h.tipo === 'Config' && h.chave === 'aniversario');
         let niver = configNiver ? configNiver.valor : localStorage.getItem('aniver_' + currentUser.loginID);
         let precisaPedirNiver = false;
@@ -883,7 +871,8 @@
                     dataHoraDispositivo: dataHoraDispositivo,
                     obs: geo.ok ? `Registrado via App em ${dataHoraDispositivo} (Local)` : `Registrado via App em ${dataHoraDispositivo} (Fora)`
                 };
-                promises.push(set(ref(database, `historico/${currentUser.uid}/${chaveFirebase}`), obj));
+                // CORREÇÃO: Voltando para loginID
+                promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebase}`), obj));
                 novosRegistros++;
             }
         }
@@ -934,12 +923,13 @@
                     let chaveFirebase = `${dd}_${mm}_${anoDoDia}_${item.tipo}`;
                     let registroAntigo = historicoGlobal.find(h => h.data === dataFormatada && h.tipo === item.tipo);
 
+                    // CORREÇÃO: Voltando para loginID em tudo aqui embaixo
                     if (valorEditado === "") {
-                        if (registroAntigo) promises.push(set(ref(database, `historico/${currentUser.uid}/${chaveFirebase}`), null));
+                        if (registroAntigo) promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebase}`), null));
                     } else {
                         if (!registroAntigo || registroAntigo.hora !== valorEditado) {
                             let payload = { usuario: currentUser.user.nome, data: dataFormatada, hora: valorEditado, tipo: item.tipo, noLocal: geo.ok, dataHoraDispositivo: dataHoraDispositivo, obs: `AutoSave Espelho em ${dataHoraDispositivo}` };
-                            promises.push(set(ref(database, `historico/${currentUser.uid}/${chaveFirebase}`), payload));
+                            promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebase}`), payload));
                         }
                     }
                 }
@@ -950,14 +940,14 @@
             let obsAntiga = historicoGlobal.find(h => h.tipo === 'ObservacaoMensal' && h.mesAno === valMes)?.texto || "";
             if (edicoesSalvas['_obs'] !== obsAntiga) {
                 let chaveFirebaseObs = `OBS_MENSAL_${valMes}`;
-                promises.push(set(ref(database, `historico/${currentUser.uid}/${chaveFirebaseObs}`), { tipo: 'ObservacaoMensal', mesAno: valMes, texto: edicoesSalvas['_obs'] }));
+                promises.push(set(ref(database, `historico/${currentUser.loginID}/${chaveFirebaseObs}`), { tipo: 'ObservacaoMensal', mesAno: valMes, texto: edicoesSalvas['_obs'] }));
             }
         }
 
         try {
             if(promises.length > 0) {
                 await Promise.all(promises);
-                get(ref(database, `historico/${currentUser.uid}`)).then((snapshot) => {
+                get(ref(database, `historico/${currentUser.loginID}`)).then((snapshot) => {
                     historicoGlobal = [];
                     if (snapshot.exists()) { snapshot.forEach((childSnapshot) => { historicoGlobal.push(childSnapshot.val()); }); }
                 });
@@ -1035,7 +1025,6 @@
       carregarHorariosDoDiaSelecionado();
       document.getElementById('modalPonto').style.display = 'flex';
     }
-    
     function fecharModalPonto() { document.getElementById('modalPonto').style.display = 'none'; }
 
     function carregarHorariosDoDiaSelecionado() {
@@ -1212,14 +1201,16 @@
         mostrarLoader("ENVIANDO ATESTADO PARA A NUVEM...");
 
         const nomeArquivo = `Atestado_${Date.now()}_${file.name}`;
-        const caminhoStorage = `laranjeiras/${currentUser.uid}/${valMes}/${nomeArquivo}`;
+        // CORREÇÃO: Voltando para loginID
+        const caminhoStorage = `laranjeiras/${currentUser.loginID}/${valMes}/${nomeArquivo}`;
         const storageRef = sRef(storage, caminhoStorage);
 
         try {
             const uploadTask = await uploadBytesResumable(storageRef, file);
             const downloadURL = await getDownloadURL(uploadTask.ref);
             const idAnexoNoBanco = `ANEXO_${Date.now()}`;
-            const refBanco = ref(database, `anexos/${currentUser.uid}/${valMes}/${idAnexoNoBanco}`);
+            // CORREÇÃO: Voltando para loginID
+            const refBanco = ref(database, `anexos/${currentUser.loginID}/${valMes}/${idAnexoNoBanco}`);
             
             await set(refBanco, {
                 nomeOriginal: file.name,
@@ -1249,7 +1240,8 @@
             const refDoArquivo = sRef(storage, caminhoDoStorage);
             await deleteObject(refDoArquivo);
 
-            const refDoBanco = ref(database, `anexos/${currentUser.uid}/${valMes}/${idDoAnexo}`);
+            // CORREÇÃO: Voltando para loginID
+            const refDoBanco = ref(database, `anexos/${currentUser.loginID}/${valMes}/${idDoAnexo}`);
             await set(refDoBanco, null);
 
             ocultarLoader();
@@ -1266,7 +1258,8 @@
       if(!currentUser) return;
       const valMes = document.getElementById('tradMesData').value; if(!valMes) return;
       
-      get(ref(database, `anexos/${currentUser.uid}/${valMes}`)).then((snapshot) => {
+      // CORREÇÃO: Voltando para loginID
+      get(ref(database, `anexos/${currentUser.loginID}/${valMes}`)).then((snapshot) => {
           anexosDoMesGlobais = [];
           if (snapshot.exists()) {
               snapshot.forEach((childSnapshot) => {
@@ -1357,7 +1350,10 @@
                 Observações e Atestados
             </div>
             
-         
+            <button class="btn btn-outline btn-small no-print" onclick="document.getElementById('anexoInput').click()" style="display:flex; align-items:center; gap:4px; margin:0; width:auto; border-color: var(--primary); color: var(--primary);">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                Anexar Atestado
+            </button>
           </div>
           <div class="obs-edit" contenteditable="plaintext-only" oninput="dispararAutoSave()">${obsSalvas}</div>
           
